@@ -1,0 +1,222 @@
+/** Spanish texts: public catalog (home, search, product page, shops and lockers). */
+export const catalog = {
+  errors: {
+    notFoundStamp: "Extraviado",
+    genericStamp: "Averiado",
+    reference: "Referencia del error: {digest}",
+  },
+
+  breadcrumbs: {
+    home: "Portada",
+    catalog: "Catálogo",
+    shops: "Tiendas",
+  },
+
+  home: {
+    hero: {
+      label: "Cartilla de abastecimiento · Serie A",
+      title: "Todo lo que no te apetece minar, en una taquilla cerca de ti",
+      body: "Las tiendas aprobadas del servidor venden objetos de verdad, depositados en el juego. Pagas con dinero del juego y lo recoges cuando quieras.",
+      cta: "Ver el catálogo",
+      help: "Cómo funciona",
+      stamp: "Solo dinero del juego",
+      stepsLabel: "Tres pasos, cero colas en el spawn",
+      steps: [
+        { title: "Vincula tu cuenta", body: "Escribe {command} en el juego y usa el código para entrar aquí." },
+        { title: "Elige y paga", body: "Llena el carrito y elige taquilla. El servidor cobra el pedido de tu saldo del juego." },
+        { title: "Recoge en la taquilla", body: "Clic derecho en la taquilla que elegiste o {command} cerca de ella." },
+      ],
+      stepNumber: "Cupón {number}",
+    },
+    categories: { label: "Secciones", title: "Compra por categoría" },
+    newest: { label: "Recién llegados", title: "Lo último que ha entrado en el almacén", link: "Ver novedades" },
+    bestSelling: {
+      label: "Lo más vendido",
+      title: "Lo que más sale por la puerta",
+      link: "Ver los más vendidos",
+      empty: "Nadie ha estrenado todavía la caja registradora. El primer pedido puede ser el tuyo.",
+    },
+    shops: {
+      label: "Tiendas del servidor",
+      title: "Quién vende aquí",
+      link: "Ver todas las tiendas",
+      empty: "Aún no hay tiendas aprobadas. Hueco libre para la tuya.",
+      cta: "Abrir una tienda",
+    },
+    lockers: {
+      label: "Taquillas",
+      title: "Recoge donde te pille de camino",
+      count: {
+        zero: "Todavía no hay taquillas activas",
+        one: "{count} taquilla activa en el servidor",
+        other: "{count} taquillas activas en el servidor",
+      },
+      body: "Eliges la taquilla al pagar. Cuando el pedido esté listo, te espera allí hasta que pases a por él.",
+      link: "Ver taquillas y coordenadas",
+      more: { one: "y {count} más", other: "y {count} más" },
+    },
+  },
+
+  search: {
+    title: "Catálogo",
+    allTitle: "Todo el catálogo",
+    queryTitle: "Resultados de «{q}»",
+    shopTitle: "Productos de {shop}",
+    metaTitle: "Buscar",
+    results: {
+      zero: "Ningún resultado",
+      one: "{count} resultado",
+      other: "{count} resultados",
+    },
+    resultsRange: "{from}–{to} de {total}",
+    filters: {
+      title: "Filtros",
+      toggle: "Filtrar y ordenar",
+      query: "Buscar",
+      queryPlaceholder: "Nombre, objeto o tienda",
+      category: "Categoría",
+      anyCategory: "Todas",
+      shop: "Tienda",
+      anyShop: "Todas las tiendas",
+      availability: "Disponibilidad",
+      inStock: "Solo con stock",
+      price: "Precio por unidad",
+      min: "Mínimo",
+      max: "Máximo",
+      apply: "Aplicar filtros",
+      clear: "Quitar filtros",
+      active: "Filtros activos",
+      remove: "Quitar filtro: {name}",
+      priceFrom: "Desde {price}",
+      priceTo: "Hasta {price}",
+    },
+    sort: {
+      label: "Ordenar por",
+      apply: "Ordenar",
+      options: {
+        relevance: "Relevancia",
+        price_asc: "Precio: de menor a mayor",
+        price_desc: "Precio: de mayor a menor",
+        newest: "Novedades",
+        best_selling: "Más vendidos",
+        top_rated: "Mejor valorados",
+      },
+    },
+    empty: {
+      title: "Aquí no hay nada que rascar",
+      body: "Ningún producto cumple esos filtros. Prueba con menos palabras o quita algún filtro.",
+      cta: "Ver todo el catálogo",
+    },
+  },
+
+  pagination: {
+    previous: "Anterior",
+    next: "Siguiente",
+    page: "Página {page}",
+    current: "Página {page}, actual",
+  },
+
+  product: {
+    gallery: "Imagen del producto",
+    priceLabel: "Precio por unidad",
+    itemLabel: "Objeto",
+    descriptionTitle: "Descripción",
+    noDescription: "La tienda no ha escrito descripción. El objeto habla por sí solo.",
+    seeReviews: "Ver valoraciones",
+    buyBoxLoading: "Preparando la caja…",
+    details: {
+      title: "Detalles del producto",
+      item: "Objeto",
+      material: "ID de material",
+      unit: "Unidad",
+      category: "Categoría",
+      listing: "Nº de producto",
+      published: "Publicado",
+      sold: "Vendidas",
+      shop: "Tienda",
+    },
+    moreFromShop: { label: "De la misma tienda", title: "Más de {shop}", link: "Ver la tienda" },
+  },
+
+  reviews: {
+    label: "Opiniones",
+    title: "Valoraciones de compradores",
+    shopTitle: "Lo que dicen de esta tienda",
+    average: "{rating} de 5",
+    total: { zero: "Sin valoraciones", one: "{count} valoración", other: "{count} valoraciones" },
+    stars: { one: "{count} estrella", other: "{count} estrellas" },
+    starsShare: "{stars}: {percent} %",
+    verified: "Compra verificada",
+    about: "Sobre {listing}",
+    noBody: "Sin comentario. Solo la nota.",
+    empty: "Todavía nadie ha opinado. Solo puede valorar quien ha recogido su pedido, así que aquí no hay reseñas compradas.",
+    showingLatest: "Se muestran las {count} más recientes.",
+  },
+
+  shops: {
+    title: "Tiendas del servidor",
+    lead: "Todas pasan por la ventanilla de un admin antes de vender. Elige la que te inspire más confianza.",
+    count: { zero: "Ninguna tienda aprobada", one: "{count} tienda aprobada", other: "{count} tiendas aprobadas" },
+    owner: "de {name}",
+    listings: { one: "{count} producto", other: "{count} productos" },
+    sold: { one: "{count} vendida", other: "{count} vendidas" },
+    official: "Oficial",
+    noDescription: "Sin descripción. Una tienda de pocas palabras.",
+    empty: {
+      title: "Ninguna tienda abierta todavía",
+      body: "El mercado está esperando a su primer comerciante. Si tienes cofres llenos, ya sabes.",
+      cta: "Abrir mi tienda",
+    },
+  },
+
+  shop: {
+    since: "En Cubezon desde {date}",
+    owner: "Regentada por {name}",
+    stats: {
+      listings: "Productos",
+      sold: "Unidades vendidas",
+      rating: "Valoración",
+    },
+    listingsTitle: "Escaparate",
+    listingsLabel: "Productos",
+    featuredLabel: "La tienda recomienda",
+    featuredTitle: "Destacados",
+    location: {
+      title: "Dónde está",
+      value: "{world} · de {from} a {to}",
+      coords: "{x}, {y}, {z}",
+    },
+    empty: {
+      title: "Escaparate vacío",
+      body: "Esta tienda aún no tiene productos activos. Vuelve dentro de un rato.",
+    },
+  },
+
+  /** Alternative texts of the shop images (logo in the seal, banner on the storefront). */
+  media: {
+    logoAlt: "Logo de {name}",
+    bannerAlt: "Portada de {name}",
+  },
+
+  lockers: {
+    title: "Taquillas de recogida",
+    lead: "Los pedidos se recogen en el juego, en la taquilla que elegiste al pagar.",
+    count: { zero: "Ninguna taquilla activa", one: "{count} taquilla activa", other: "{count} taquillas activas" },
+    world: "Mundo",
+    coords: "Coordenadas",
+    coordsValue: "X {x} · Y {y} · Z {z}",
+    howTitle: "Cómo recoger",
+    howSteps: [
+      "Espera a que tu pedido diga «En taquilla» en Mis pedidos.",
+      "Ve a la taquilla que elegiste al pagar.",
+      "Haz clic derecho en el bloque de la taquilla o usa {command} a 5 bloques o menos, y elige el pedido en el menú.",
+      "Lleva tantos huecos libres en el inventario como unidades tenga el pedido.",
+    ],
+    ordersLink: "Ver mis pedidos",
+    helpLink: "Más ayuda sobre la recogida",
+    empty: {
+      title: "No hay taquillas activas",
+      body: "Un admin tiene que colocar la primera en el juego. Mientras tanto, los pedidos no tienen dónde esperarte.",
+    },
+  },
+} as const;
