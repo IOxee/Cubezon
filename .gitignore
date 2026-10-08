@@ -1,0 +1,44 @@
+# Environment (real keys never go in the repo; see .env.example)
+.env
+.env.*
+!.env.example
+
+# Java / Gradle
+*.class
+*.log
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+*.war
+*.nar
+*.ear
+hs_err_pid*
+replay_pid*
+.gradle/
+build/
+bin/
+out/
+
+# IDEs
+.idea/
+.vscode/
+.settings/
+.project
+.classpath
+*.iml
+.nb-gradle/
+
+# Supabase CLI local state (linked project, pooler URL)
+supabase/.temp/
+supabase/.branches/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local agent tooling
+.claude/
