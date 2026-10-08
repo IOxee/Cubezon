@@ -1,0 +1,15 @@
+name: Cubezon
+version: '${version}'
+main: es.fractalgamestudios.cubezon.CubezonPlugin
+api-version: '1.21'
+description: Marketplace web de objetos del juego con recogida en taquillas.
+depend: [Vault]
+# Item plugins Cubezon can recognise (optional): loaded first when present.
+softdepend: [ItemsAdder, MMOItems, CraftEngine, Nexo, Oraxen, Slimefun, EcoItems, CustomJukebox]
+permissions:
+  cubezon.use:
+    description: Usar /cubezon y vincular la cuenta.
+    default: true
+  cubezon.admin:
+    description: Administrar Cubezon (recargar, aprobar tiendas, taquillas).
+    default: op

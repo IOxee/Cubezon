@@ -1,0 +1,207 @@
+# Language of the messages (file in plugins/Cubezon/lang/<locale>.yml).
+locale: es
+
+# Database (PostgreSQL / Supabase).
+# The environment variables CUBEZON_DB_URL, CUBEZON_DB_USER and CUBEZON_DB_PASSWORD take precedence;
+# if CUBEZON_DB_URL is set, the database is enabled even when enabled is false.
+# Use the direct connection or the session pooler (port 5432), not the transaction pooler (6543).
+database:
+  enabled: false
+  url: ''
+  user: ''
+  password: ''
+  pool-size: 4
+
+link:
+  # Minutes a /cz link code stays valid.
+  code-ttl-minutes: 10
+
+# Storage blocks: each one placed in a shop's zone adds capacity to that shop. The TYPES (block,
+# capacity and price) are managed in game: /cz storage type create|remove|list (admin).
+storage:
+  # /cz storage buy [type] [amount]: if false, they can only be crafted or given by an admin.
+  buy:
+    enabled: true
+  # Crafting recipe of the default type (barrel). Materials by their Minecraft id.
+  recipe:
+    enabled: true
+    shape:
+      - 'ICI'
+      - 'CBC'
+      - 'ICI'
+    ingredients:
+      I: iron_ingot
+      C: chest
+      B: barrel
+
+# Web orders.
+orders:
+  # automatic: the plugin charges and prepares every order by itself.
+  # roleplay:  each shop handles its orders from its company computer: it accepts them (the buyer is
+  #            charged and the money is held) or rejects them, and an employee carries the package
+  #            to the locker (the seller is paid then).
+  # READ ONLY AT STARTUP: changing it requires a server restart (/cz reload does not change it).
+  mode: automatic
+  # Automatic mode: how often (in seconds) new orders are polled.
+  poll-seconds: 5
+  # Maximum orders processed per poll.
+  per-run: 20
+  roleplay:
+    # Hours to accept or reject an order; after that it is cancelled without charging.
+    accept-hours: 48
+    # Hours to deliver an accepted order; after that it is cancelled and the buyer refunded.
+    deliver-hours: 48
+
+# Company computer (roleplay mode): placed inside the shop's zone.
+computer:
+  # Computer block (solid, not affected by gravity). Already placed computers keep working.
+  block: crafter
+  # Item used for the package the courier carries (must not be placeable).
+  package-material: paper
+  buy:
+    enabled: true
+    price: 2500.0
+  recipe:
+    enabled: true
+    shape:
+      - 'III'
+      - 'RCR'
+      - 'III'
+    ingredients:
+      I: iron_ingot
+      R: redstone
+      C: crafter
+
+# Items from other plugins and mods. Each listing is identified by a namespaced key
+# (minecraft:diamond, nexo:ruby, itemsadder:pack:ruby, mmoitems:SWORD:FIRE_SWORD,
+# craftengine:default:topaz, create:wrench...).
+# ItemsAdder, MMOItems and CraftEngine are recognised automatically when installed. Mods keep their namespace.
+# /cz item info shows the key of the item in your hand.
+items:
+  # PDC keys where other plugins store their item ids (format namespace:key).
+  # The listing key becomes <namespace>:<value>. Add the keys of any other plugin here.
+  pdc-keys:
+    - nexo:id
+    - oraxen:id
+    - slimefun:slimefun_item
+    - ecoitems:item
+    # BS CustomJukebox discs.
+    - customjukebox:disc_id
+
+# Player shops.
+shops:
+  # How many shops each player may have (rejected ones do not count). An OP can give a specific player
+  # more or fewer with /cz shop settings slots <player> <n|reset>. The database enforces the limit on
+  # the web too. Published at startup and on /cz reload.
+  default-slots: 1
+  # In how many other players' shops each player may work as an employee (global).
+  max-memberships: 1
+  # Item used as the zone wand (/cz shop <slug>).
+  zone-wand-material: stick
+
+# Shop roles. The owner always has every permission and is the only one who creates, edits or
+# deletes roles (from the computer). Available permissions:
+#   orders.decide    accept or reject orders           orders.package   print packages
+#   stock.deposit    deposit stock                     stock.withdraw   withdraw stock
+#   products.manage  create and edit products          staff.manage     hire, fire and assign roles
+#   storage.buy      buy storage blocks and computers
+roles:
+  # Maximum roles per shop.
+  max-per-shop: 10
+  # Roles every new shop starts with (existing shops do not change). The one with default: true is
+  # given to every new employee.
+  defaults:
+    - name: Gerente
+      permissions: [orders.decide, orders.package, stock.deposit, stock.withdraw, products.manage, staff.manage, storage.buy]
+    - name: Empleado
+      default: true
+      permissions: [orders.decide, orders.package, stock.deposit]
+    - name: Repartidor
+      permissions: [orders.package]
+
+# Personal mailbox and express delivery.
+mailbox:
+  # Mailbox block (solid, not affected by gravity). If invalid, dropper is used.
+  block: dropper
+  # Mailboxes per player.
+  max-per-player: 1
+  # /cz mailbox buy [amount]
+  buy:
+    enabled: true
+    price: 500.0
+  recipe:
+    enabled: true
+    shape:
+      - ' I '
+      - 'ICI'
+      - ' I '
+    ingredients:
+      I: iron_ingot
+      C: chest
+  # Express delivery: on the web the buyer picks their mailbox instead of a locker. It arrives on its own,
+  # with no courier, when the order is processed (automatic) or the shop accepts it (roleplay).
+  express:
+    enabled: true
+    # Extra fee the buyer pays per express order.
+    fee: 100.0
+    # true: the fee goes to the seller; false: the server keeps it.
+    fee-to-seller: false
+
+# General settings.
+settings:
+  # Reach (in blocks) for /cz locker create (targeted block) and for /cz pickup.
+  locker-reach: 5
+  # Most items that can be bought at once (storage blocks, computers, mailboxes). Max 256.
+  max-purchase-amount: 256
+  # Characters of the shop name shown in menu titles before it is cut with "…".
+  menu-title-name-length: 22
+  # Product name length (the database accepts 3 to 60).
+  product-title:
+    min: 3
+    max: 60
+  # How often (in seconds) lockers, zones, storage blocks, computers and mailboxes are reloaded (web changes).
+  refresh-seconds: 60
+  # How often (in seconds) expirations and pending payouts are checked.
+  order-jobs-seconds: 60
+  # Chat prompts (amounts, prices, names).
+  prompt:
+    timeout-seconds: 60
+    cancel-words: [cancelar, cancel]
+
+# Sounds. sound: Minecraft id (https://minecraft.wiki/w/Sounds.json); enabled: false turns it off.
+sounds:
+  menu-click:
+    sound: minecraft:ui.button.click
+    volume: 0.5
+    pitch: 1.0
+    enabled: true
+  prompt:
+    sound: minecraft:block.note_block.pling
+    volume: 0.8
+    pitch: 1.4
+    enabled: true
+  success:
+    sound: minecraft:entity.experience_orb.pickup
+    volume: 0.8
+    pitch: 1.2
+    enabled: true
+  error:
+    sound: minecraft:block.note_block.bass
+    volume: 0.8
+    pitch: 0.7
+    enabled: true
+  order-ready:
+    sound: minecraft:block.note_block.bell
+    volume: 1.0
+    pitch: 1.0
+    enabled: true
+  sale:
+    sound: minecraft:entity.villager.yes
+    volume: 0.8
+    pitch: 1.0
+    enabled: true
+  package-delivered:
+    sound: minecraft:block.barrel.close
+    volume: 1.0
+    pitch: 1.0
+    enabled: true
