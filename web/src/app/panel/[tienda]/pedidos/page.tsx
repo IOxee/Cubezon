@@ -1,0 +1,118 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+import { fmt, m, plural } from "@/i18n";
+import { getOrdersMode } from "@/lib/data/roleplay";
+import { getShopOrders, requireSellerShop } from "@/lib/data/seller";
+import type { OrdersMode } from "@/lib/order-display";
+import { panelPath } from "@/lib/seller/shops";
+import { filterStatuses, ORDER_FILTERS, type OrderFilter } from "@/lib/seller/stats";
+import { OrdersTable } from "@/components/seller/orders-table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Notice } from "@/components/ui/notice";
+import { PanelHeader, PanelSkeleton } from "../../_components/panel-ui";
+
+export const metadata: Metadata = { title: m.seller.meta.orders };
+
+const PAGE_SIZE = 25;
+const t = m.seller.orders;
+
+type Props = PageProps<"/panel/[tienda]/pedidos">;
+
+export default function OrdersPage({ params, searchParams }: Props) {
+  return (
+    <>
+      <PanelHeader title={t.title} />
+      <Suspense fallback={<PanelSkeleton rows={8} />}>
+        <Orders params={params} searchParams={searchParams} />
+      </Suspense>
+    </>
+  );
+}
+
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function filterFromSlug(slug: string | undefined): OrderFilter {
+  return ORDER_FILTERS.find((filter) => filter !== "all" && t.filters[filter].slug === slug) ?? "all";
+}
+
+/** Filter labels: in roleplay mode PENDING and PAID read "Por aceptar" and "En preparación". */
+function filterLabel(filter: OrderFilter, mode: OrdersMode): string {
+  if (mode === "roleplay" && (filter === "PENDING" || filter === "PAID")) return m.roleplay.panel.filters[filter];
+  return t.filters[filter].label;
+}
+
+function ordersHref(slug: string, filter: OrderFilter, page = 1): string {
+  const query = new URLSearchParams();
+  if (t.filters[filter].slug) query.set("estado", t.filters[filter].slug);
+  if (page > 1) query.set("pagina", String(page));
+  const search = query.toString();
+  const path = panelPath(slug, "pedidos");
+  return search ? `${path}?${search}` : path;
+}
+
+async function Orders({ params, searchParams }: Pick<Props, "params" | "searchParams">) {
+  const [{ tienda }, query] = await Promise.all([params, searchParams]);
+  const { shop } = await requireSellerShop(tienda, panelPath(tienda, "pedidos"));
+  const filter = filterFromSlug(first(query.estado));
+  const page = Math.max(1, Number.parseInt(first(query.pagina) ?? "1", 10) || 1);
+  const [{ orders, total }, mode] = await Promise.all([
+    getShopOrders(shop.id, { statuses: filterStatuses(filter), page, pageSize: PAGE_SIZE }),
+    getOrdersMode(),
+  ]);
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  return (
+    <div className="space-y-4">
+      {mode === "roleplay" ? <Notice>{m.roleplay.panel.ordersHint}</Notice> : null}
+
+      <nav aria-label={t.filterLabel}>
+        <ul className="scroll-row flex gap-1 overflow-x-auto pb-1">
+          {ORDER_FILTERS.map((option) => (
+            <li key={option}>
+              <Link
+                href={ordersHref(shop.slug, option)}
+                aria-current={option === filter ? "page" : undefined}
+                className={`btn btn-sm whitespace-nowrap ${option === filter ? "btn-ink" : "btn-ghost"}`}
+              >
+                {filterLabel(option, mode)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <p className="text-sm text-ink-3">{plural(total, t.count)}</p>
+
+      {orders.length > 0 ? (
+        <OrdersTable orders={orders} caption={t.caption} mode={mode} />
+      ) : filter === "all" && page === 1 ? (
+        <EmptyState icon="chest" title={t.empty.title} body={t.empty.body} />
+      ) : (
+        <EmptyState icon="spyglass" title={t.emptyFiltered.title} body={t.emptyFiltered.body} />
+      )}
+
+      {pages > 1 ? (
+        <nav aria-label={m.a11y.pagination} className="flex items-center justify-between gap-3">
+          {page > 1 ? (
+            <Link href={ordersHref(shop.slug, filter, page - 1)} className="btn btn-sm">
+              {t.pagination.newer}
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="num text-xs text-ink-3">{fmt(t.pagination.page, { page, pages })}</span>
+          {page < pages ? (
+            <Link href={ordersHref(shop.slug, filter, page + 1)} className="btn btn-sm">
+              {t.pagination.older}
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
+    </div>
+  );
+}
