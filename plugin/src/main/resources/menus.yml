@@ -1,0 +1,203 @@
+# Company computer menus: position (slot) and icon (material) of each button.
+# slot: 0 is the top-left corner; each row has 9 slots. slot: -1 hides the button.
+# material: Minecraft id (chest, ender_chest, lime_concrete...). Texts are in lang/es.yml.
+# Optional on any button, for resource pack icons:
+#   item-model: mypack:buttons/accept    (item model, 1.21.4+)
+#   custom-model-data: 1001              (number)
+#   glow: true                           (enchantment glint)
+# Entries without a slot are variants of a button (e.g. active or paused): they only change the icon.
+# An entry without a material uses the built-in one (e.g. the mailbox block).
+# Changes apply with /cz reload.
+
+# Main screen
+main:
+  shop-name:
+    slot: 4
+    material: name_tag
+  orders-button:
+    slot: 10
+    material: chest
+  orders-locked:
+    slot: 10
+    material: gray_dye
+  orders-automatic:
+    slot: 10
+    material: gray_dye
+  staff-button:
+    slot: 12
+    material: player_head
+  listings-button:
+    slot: 14
+    material: item_frame
+  storage-button:
+    slot: 16
+    material: barrel
+  close:
+    slot: 22
+    material: barrier
+
+# One order (✔/✖)
+orderDecision:
+  buyer:
+    slot: 4
+  product:
+    slot: 20
+  destination:
+    slot: 22
+  locker:
+    material: ender_chest
+  mailbox:
+    item-model: ''
+  decision-when:
+    slot: 24
+    material: clock
+  decision-accept:
+    slot: 38
+    material: lime_concrete
+  decision-reject:
+    slot: 42
+    material: red_concrete
+  decision-reprint:
+    slot: 40
+    material: paper
+  back:
+    slot: 36
+    material: arrow
+
+# Staff
+staff:
+  staff-hire:
+    slot: 53
+    material: emerald
+  roles-button:
+    slot: 45
+    material: name_tag
+
+# Hire
+hire:
+  staff-nobody:
+    slot: 22
+    material: paper
+  back:
+    slot: 49
+    material: arrow
+
+# One employee
+member:
+  head:
+    slot: 4
+  role:
+    material: name_tag
+  role-current:
+    material: lime_dye
+  staff-fire:
+    slot: 35
+    material: barrier
+  back:
+    slot: 27
+    material: arrow
+
+# Roles
+roles:
+  role:
+    material: name_tag
+  role-default:
+    material: nether_star
+  roles-new:
+    slot: 53
+    material: writable_book
+  back:
+    slot: 49
+    material: arrow
+
+# One role
+role:
+  header:
+    slot: 4
+  permissions-start:
+    slot: 10
+  permission-on:
+    material: lime_dye
+  permission-off:
+    material: gray_dye
+  roles-rename:
+    slot: 28
+    material: name_tag
+  roles-make-default:
+    slot: 30
+    material: nether_star
+  roles-delete:
+    slot: 34
+    material: barrier
+  back:
+    slot: 27
+    material: arrow
+
+# Products
+listings:
+  listings-empty:
+    slot: 22
+    material: paper
+  listings-new:
+    slot: 53
+    material: writable_book
+
+# One product
+listing:
+  product:
+    slot: 4
+  sample-preview:
+    slot: 8
+  sample-mode:
+    slot: 12
+  sample-exact:
+    material: enchanted_book
+  sample-type:
+    material: book
+  status:
+    slot: 16
+  status-active:
+    material: lime_dye
+  status-paused:
+    material: gray_dye
+  sample-broken:
+    material: structure_void
+  listing-deposit:
+    slot: 10
+    material: hopper
+  listing-withdraw:
+    slot: 11
+    material: dropper
+  listing-rename:
+    slot: 14
+    material: name_tag
+  listing-price-button:
+    slot: 15
+    material: gold_nugget
+  listing-remove:
+    slot: 26
+    material: barrier
+  back:
+    slot: 22
+    material: arrow
+
+# Storage
+storage:
+  storage-info:
+    slot: 4
+    material: barrel
+  storage-buy-computer:
+    slot: 31
+    material: crafter
+  back:
+    slot: 27
+    material: arrow
+
+# Shared by every menu
+common:
+  # Fills the empty slots of every menu. material: none leaves them empty.
+  filler:
+    material: none
+  back:
+    slot: 49
+    material: arrow
