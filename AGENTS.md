@@ -1,0 +1,80 @@
+# AGENTS.md — Cubezon (working title)
+
+"Amazon parody" style marketplace for a Minecraft server: admin-approved shops sell in-game items for in-game money from a website, and the buyer picks up the order from a locker inside the game. Portfolio project.
+
+## Stack and structure
+- Monorepo (`cubezon/`); the test server lives outside it, in `../server/` (Paper 1.21.11 + Vault + EssentialsX).
+  - `plugin/`: Paper 1.21.11 plugin, Java 21, Gradle Kotlin DSL. Economy via the Vault API.
+  - `web/`: Next.js 16 (Cache Components) + TypeScript + Tailwind 4. Architecture and conventions in `docs/web.md`; style in `DESIGN.md`. Next 16 changes APIs: read `web/AGENTS.md` and `web/node_modules/next/dist/docs/` before writing code.
+  - `supabase/migrations/`: versioned SQL migrations (`YYYYMMDDHHMMSS_name.sql`), schema `public`.
+  - `docs/`: design, flows and decisions.
+- Database: PostgreSQL on Supabase, shared by the plugin and the web.
+- The plugin is the **sole authority** over balances and inventories. The web only creates requests (`PENDING` orders) that the plugin processes.
+
+## Commands
+- `cd plugin && ./gradlew build`: compiles, runs the tests and builds the jar with dependencies in `plugin/build/libs/`.
+- `cd plugin && ./gradlew deployToServer`: compiles and copies the plugin to `../server/plugins/Cubezon.jar`.
+- `cd web && npm run dev`: web locally (http://localhost:3000). `npm run build`, `npm run lint`, `npm run typecheck` and `npm test` (Vitest) to verify. After changing the schema: `supabase gen types typescript --linked --schema public > web/src/lib/supabase/database.types.ts`.
+- `npx supabase db push` (from `cubezon/`): applies the pending migrations in `supabase/migrations/` to Supabase. `npx supabase migration list` shows which ones are applied.
+- `../server/start.bat`: starts the test server with Java 21 and loads the `CUBEZON_*` variables from `.env`.
+
+## Conventions
+- Code, names and comments in English.
+- Player-facing and web texts in Spanish, always through i18n files (never hardcoded strings in the code).
+- Explicit order states (`PENDING → PAID → READY → COLLECTED`, plus `FAILED`/`REFUNDED`); every transition is recorded.
+
+## Domain rules / known pitfalls
+- Stock only through deposits: an item is sold only if the seller deposited it in the game beforehand. Never create items out of thin air.
+- Every Vault or inventory operation runs on the server's main thread. The DB is always queried through `plugin.dbExecutor()` (never with `runTaskAsynchronously`): `onDisable` waits for it so deposits are not cut off halfway.
+- On failure, losing items recoverably (Base64 log) is better than duplicating them: they are taken out of the menu on the main thread and only given back if the DB did not store them.
+- Order processing (`order/OrderProcessor`), one at a time every `orders.poll-seconds`:
+  1. Claim (one transaction): `processing_started_at`, check shop, listing and locker, reserve units and validate `item_data`.
+  2. Charge with Vault on the main thread (`OrderPayment`).
+  3. PAID → READY (another transaction).
+  Any failure before charging → FAILED without moving money; if the payout to the seller fails → REFUNDED. On startup, PENDING orders with `processing_started_at` are marked FAILED/INTERRUPTED and logged for manual review: never charge twice. Assumes a single game server per DB.
+- `orders.failure_reason` codes: OUT_OF_STOCK, LISTING_UNAVAILABLE, LOCKER_UNAVAILABLE, MAILBOX_UNAVAILABLE, SHOP_REJECTED, EXPIRED, DELIVERY_EXPIRED, INVALID_ITEM, INSUFFICIENT_FUNDS, PAYMENT_ERROR, INTERRUPTED, PAYOUT_FAILED (REFUNDED), REFUND_FAILED. The web translates them: if you add one, say so.
+- Self-purchases (buyer = shop owner, development only) do not move money.
+- Order mode (`orders.mode`, `OrderMode`): `automatic` or `roleplay`. It is read **only on startup** and published to `plugin_settings.orders_mode` for the web. `/cz reload` does not change it: it warns that a restart is required. Do not make it reloadable: it would mix both flows with half-finished orders.
+- Roleplay (`roleplay/RoleplayController`): the owner or an employee (`shop_members`) uses the «Ordenador de empresa» (company computer; a crafter with a PDC mark, in `shop_computers`, inside the zone) to accept (only the buyer is charged and the money is held; PAID = being prepared) or reject (SHOP_REJECTED). Accepting prints a «Paquete» (package; paper with PDC: order + locker) that contains no items. Whoever takes it to its locker and right-clicks delivers it (READY), and then the seller gets paid. They expire per `orders.roleplay.accept-hours` (EXPIRED) and `deliver-hours` (DELIVERY_EXPIRED, with refund).
+- Seller payouts: `orders.seller_paid_at` is set **before** paying and cleared if the payment fails. `runJobs` retries unmarked payouts every minute. This way a failure can leave someone unpaid, but never pays twice.
+- RLS enabled on every table. Only `shops` (APPROVED), `listings` (ACTIVE from approved shops), `lockers` (active) and the `listing_stock` view are readable with the publishable key. Any new table: enable RLS in the same migration.
+- `orders.total` must be exactly `unit_price * quantity` (CHECK). `order_events` is filled only by a trigger: do not insert manually.
+- One `escrow_items` row is one unit of a listing (one ItemStack). Stock is the rows in state `AVAILABLE`.
+- Migrations are applied only with `supabase db push`. If one is applied any other way (psql, SQL Editor), mark it with `supabase migration repair --status applied <version>` or the next push will fail with «already exists».
+- Items are serialized with `ItemStack#serializeAsBytes`, which preserves enchantments, NBT and names.
+- Supabase: the plugin uses the direct connection or the session pooler (5432), not the transaction pooler (6543). The publishable key (`sb_publishable_…`) cannot write orders or balances; the secret key (`sb_secret_…`) is server-only.
+- Account linking via a temporary code generated in game (`/cubezon link`, alias `/cz`), short-lived and single-use. The web redeems it with the `redeem_link_code` function.
+- `/cz` subcommands: **English only**, no aliases (user decision): `link`, `deposit`, `pickup`, `storage [buy|give|type create|remove|list]`, `computer buy|give`, `mailbox [buy|give]`, `employee add|remove|list`, `item info|register`, and for admins `locker create|remove|list`, `shop <slug|id>`, `shop settings slots <player> [n|reset]` and `reload`. Player-facing texts remain in Spanish. If any command changes, tell the web side, which shows them in its help.
+- Lockers: the plugin caches them in memory (`LockerRegistry`) and reloads them every 60 s and after creating, deleting or listing. Clicks and breaks never query the DB. A locker with orders is not deleted: it is deactivated, or deleted by moving its orders to another active one with `/cz locker remove <name> <other>`.
+- Capacity: each shop can only hold in escrow (states AVAILABLE + RESERVED) as many units as the sum of `storage_blocks.capacity` of the «Almacén Cubezon» (Cubezon storage) blocks placed in its zone (a cuboid in `shops.zone_*`, which never overlaps another shop). Deposits check this with the shop row locked (`for update of s`). If there is excess stock because storage blocks were removed, selling can continue, but depositing cannot.
+- Item identity (`item/ItemIdentity`): `listings.item_key` with namespace. ItemsAdder, MMOItems and CraftEngine are recognized via reflection (no compile-time dependency, `softdepend`), other plugins via the PDC keys in `items.pdc-keys` (e.g. `customjukebox:disc_id`). CraftEngine stores its id at the root of `custom_data`, outside the PDC, so it cannot be matched with a PDC key. Vanilla and mod items are identified by their material key with its namespace. `material` is only the vanilla base, for the icon. Never compare items by `getType()`.
+- Per-listing matching: `match_mode` KEY (any variant of the key) or EXACT (`isSimilar` with `listings.sample`, same NBT). Deposits re-check the sample inside the transaction.
+- To ask for a quantity, use `ChatPrompt.askAmount` (asks in chat, outside public chat) instead of fixed quantities on the buttons.
+- Menus: use `gui/Gui` (buttons with an action, read-only) for new screens. The old menus (deposit, pickup) have their own holder.
+- Mailbox and express delivery (`mailbox/`, `mailboxes`): each player places up to `mailbox.max-per-player` mailboxes wherever they want. An order is `delivery_method` LOCKER (with `locker_id`) or MAILBOX (with `mailbox_id`, no locker) and pays `express_fee` on top of `total`. Express arrives on its own: in automatic mode when processed and in roleplay when accepted (`acceptIntoMailbox`: PAID → READY without a package). The buyer pays `ClaimedOrder.charged()` and the seller receives `sellerAmount(fee-to-seller)`. A mailbox with PENDING/PAID/READY orders cannot be deleted (prevented by the code and by the `orders_delivery_target` constraint). Published settings: `express_enabled`, `express_fee` and `max_mailboxes`.
+- Ranks and permissions (`roles/ShopPermission`, `shop_roles`): the owner has every permission; each employee has a rank with permissions (`orders.decide`, `orders.package`, `stock.deposit`, `stock.withdraw`, `products.manage`, `staff.manage`, `storage.buy`). Every action is re-checked in SQL with `public.shop_member_can(tienda, jugador, permiso)`: never check only "is the owner". Only the owner (or an admin) defines ranks. Assigning or removing ranks needs `staff.manage`, but only the owner (or an admin) can give a rank that includes `staff.manage` or change the rank of someone who has it. The permission list lives in the enum and in `shop_permission_list()`, and a test checks that they match. A new shop's ranks come from `roles.defaults` (published as `default_shop_roles`).
+- Computer panel (`roleplay/ComputerPanel`): every section and every button depends on the rank's permissions. Clicking an order opens the decision screen (customer, location, locker, ✔/✖). Only the owner or an admin hires and fires, withdraws stock (escrow RETURNED, set before handing over), sets samples and creates or edits products (name, price, pause, removal only with no stock and no reserved units). Products are created from the item in hand, prompting with `ChatPrompt` (`askText`, `askAmount`, `askPrice`).
+- In player-facing texts, `listings` are called «productos», not «anuncios».
+- Storage types (`storage_types`, `StorageType`): an admin creates them in game from any solid, non-falling block, plus capacity and price. `barrel` is the default type. Each block stores the capacity it was placed with (`storage_blocks.capacity`), so changing a type does not alter placed blocks. A type in use is not deleted: it is retired (`buyable = false`). The item carries a PDC mark `cubezon:storage_type` with the id; the old `cubezon:storage_block` (BYTE) ones count as `barrel`. An identical block without that mark does not count. When broken, the DB row is deleted first, then the block, and the special item is given back. Right-click does not open it. While sneaking with something in hand, the plugin does not touch the event (`InteractRules.passesThrough`), so blocks can be placed on top as in vanilla. This is needed because, if interaction with the block is denied, Paper never uses the item in hand, even if `useItemInHand` is ALLOW. Applies to storage blocks, computers and lockers.
+- Pickup (`pickup/PickupController`): right-clicking the locker, or `pickup` when nearby, opens a menu with the player's READY orders at that locker. Clicking an order: free slots are checked, a transaction moves it to COLLECTED and its units to DELIVERED (only if it is still READY and belongs to the buyer), and then the items returned by the DB are given. If they cannot be given, they are logged in Base64. Deposit: identical items (`isSimilar`) of the listing's material are summed and split into units of `unit_amount`; the remainder is given back. A unit is a single ItemStack, so `unit_amount` cannot exceed the item's max stack size (1 for swords, 16 for pearls…).
+- Employment limit: a player works in at most `plugin_settings.max_shop_memberships` shops they do not own (config `shops.max-memberships`, 1 by default). Enforced by a trigger on `shop_members` (`SHOP_MEMBERSHIPS_EXCEEDED`) and queried with `shop_memberships_of(uuid)`.
+- Shop slots: the limit is enforced by the database (trigger `check_shop_slots` on shops, error `SHOP_SLOTS_EXCEEDED`). REJECTED shops do not count. The quota is `players.shop_slots` or, if null, `plugin_settings.default_shop_slots` (which the plugin publishes from `shops.default-slots`). `shop_slots_of(uuid)` returns the quota, used and free slots. Do not duplicate the check in code.
+- Another session is working on the web and its migrations. Before creating a migration, list `supabase/migrations` and use a timestamp later than the latest one **and not already taken**: if two files share a version, `db push` applies the wrong one and fails.
+- Do not use Amazon's brand, logo or name. In-game money only (Mojang EULA).
+
+## Way of working
+- Texts: if you change a text that already exists in `lang/es.yml`, bump `lang-version`. The plugin will replace the server's file and keep a copy (`.bak-vN`). If you only add new texts, it is not needed.
+- Menus: the slot and material of each computer button come from `menus.yml` (`MenuLayout`, slot -1 hides it). Each icon also supports `item-model`, `custom-model-data` and `glow` (`MenuLayout.icon`), and `common.filler` fills empty slots. Never use `Icons.of(Material.X…)` in the panel: add the entry to menus.yml and use `menu.icon(...)`. If you add a button, add its entry. Sounds go in `sounds:` in config.yml (`Sounds.Event`).
+- New options: add them with a comment to `plugin/src/main/resources/config.yml` (or to `lang/es.yml`). On startup, `YamlDefaults` copies them into the server's files without touching existing values. Never read an option that is not in the jar's file.
+- Every deployed plugin change bumps the patch version in `plugin/gradle.properties` (0.0.4 → 0.0.5 → …) and is mentioned in the final summary.
+- Short plan before touching money, items, the DB schema or more than 3 files. Everything else: small, direct changes.
+- When done: what changed, how it was verified and what is left pending.
+
+## Boundaries
+- ✅ Always: tests for order and escrow logic; update MEMORY.md when closing a task; versioned DB migrations.
+- ⚠️ Ask first: new dependencies, schema or order-state changes, changes to the payment flow, new permissions or commands.
+- 🚫 Never: make git commits (the user always makes them); commit Supabase keys or `.env`; expose the Supabase secret key to the client (never with a `NEXT_PUBLIC_` prefix); modify balances from the web; hand-edit already-applied migrations.
+
+## Verification
+- Plugin: `./gradlew build` green (JUnit; MockBukkit when there is logic using the Bukkit API) and a manual test on a local Paper server: link, deposit, buy and pick up.
+- Web: build and lint without errors, and the purchase flow tested against the development DB.

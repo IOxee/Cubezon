@@ -1,0 +1,70 @@
+# MEMORY.md — Cubezon (nombre provisional)
+
+Memoria entre sesiones de esta app. Manténla breve, idealmente unas 50 líneas: resume o elimina lo que ya no aporte valor.
+
+## Estado actual
+- Plugin 0.0.28 en `../server` (Paper 1.21.11-132 + Vault + EssentialsX). La BD se activa sola con `CUBEZON_DB_URL`. Tienda de pruebas: «Bear & Co» (slug bear, antes tienda-de-prueba y bearandco), de ByBlackDeath; RedDerryng (segunda cuenta del usuario) es empleado.
+- Probado en el juego por el usuario: link, depósito, taquillas, almacenes y sus tipos, zonas con palo, procesado y recogida de pedidos, ordenador y panel, empleados, cupos, comandos en inglés, productos desde el juego (0.0.23) y rangos (0.0.24).
+- Fases pedidas el 2026-10-10: 1) ✔/✖ y productos en el juego (0.0.23); 2) rangos con permisos (0.0.24); 3) buzón y envío exprés (0.0.25; falta probarlo en el juego y la parte web); 4) todo configurable (0.0.26: `menus.yml` con hueco y material de cada botón, -1 lo oculta; `settings:` y `sounds:` en config.yml; bloque del ordenador, papel del paquete y palo de zonas configurables), falta probarlo en el juego. Furgonetas: integración opcional más adelante.
+- 2026-10-10: en `../server/plugins` se instalaron CraftEngine 26.9.2 y BS CustomJukebox 3.7.0 (Modrinth) para probar objetos y vinilos custom. En el código de Cubezon: un proveedor de CraftEngine por reflexión (`craftengine:<ns>:<id>`) y `customjukebox:disc_id` en `items.pdc-keys` (también puesta a mano en el config.yml del servidor). Incluido y desplegado en la 0.0.25. Falta probarlo en el juego con `/cz item info`.
+- Resource pack del servidor (2026-10-10): lo genera y sirve CraftEngine por el puerto 25565 (self-host, `ip: 127.0.0.1` porque solo se juega desde este PC; para jugadores de fuera, `auto` y abrir el puerto). Incluye la carpeta `plugins/CustomJukebox/resourcepack` (texturas de los 3 discos de ejemplo; falta la música `.ogg`, ver su LEEME.md). Tras cambiarla: `ce reload pack`. `kick-if-declined: false`. `server.properties` no lleva pack.
+- Historial del plugin: 0.0.6-0.0.9 almacenes y zonas; 0.0.10-0.0.12 pedidos, recogida y modo roleplay; 0.0.13 actualización de config/lang; 0.0.14-0.0.15 objetos custom y panel; 0.0.16-0.0.17 títulos y colocar bloques agachado; 0.0.18 tipos de almacén; 0.0.19-0.0.22 cupos, límite de empleos, comandos en inglés y cantidades por chat; 0.0.23-0.0.25 fases 1-3; 0.0.26 fase 4; 0.0.27 título del depósito recortado; 0.0.28 iconos de menús personalizables (item-model, custom-model-data, glow, relleno).
+- Migraciones (todas con `db push`): plugin 20261009160000, 180000, 190000, 200000, 220000, 230000, 250000, 270000, 280000, 20261010090000 y 20261010110000; las demás son de la web.
+- Web (2026-10-09): prototipo funcional (ver `docs/web.md`). Incluye:
+  - comprador: catálogo, búsqueda con filtros, ficha, tiendas, taquillas, ayuda, login con el código de `/cz vincular`, carrito (cookie), caja (crea pedidos `PENDING`), pedidos con seguimiento y valoraciones;
+  - panel de vendedor con varias tiendas por jugador;
+  - admin: tiendas, pedidos solo lectura, taquillas (solo `active`) y equipo.
+
+  Build, lint y tests en verde; compra, seguimiento, valoración y aprobación de tiendas probados contra la BD de desarrollo.
+
+## Decisiones (y por qué)
+- Monorepo plugin + web: es más fácil de enseñar en el portfolio y de mantener coherente.
+- Next.js + TypeScript para la web: muestra un segundo ecosistema junto a Java.
+- PostgreSQL en Supabase: BD gestionada sin servidor propio. Ojo: el plan gratuito se pausa tras 7 días sin actividad.
+- El plugin es la autoridad sobre dinero y objetos: evita duplicaciones y cobros desde un cliente no fiable.
+- Entrega por taquillas de recogida en el MVP: más segura que entregar en coordenadas libres (chunks descargados, protecciones). El cofre propio queda para una fase 2.
+- Código en inglés y textos en español con i18n.
+- Gradle con Kotlin DSL para el plugin: estándar en plugins Paper modernos.
+- Minecraft/Paper 1.21.11 (antes 1.21.10): es la versión del servidor final.
+- Servidor de pruebas real en `../server` + tarea `deployToServer`, en lugar de run-paper: el usuario prefiere una carpeta de servidor propia.
+- Web: iconos originales del juego desde un CDN configurable (`NEXT_PUBLIC_ITEM_ICON_URL`), no sprites propios (petición del usuario).
+- Web: al público no se le muestran las unidades disponibles, solo «Agotado»; el aviso de pago va solo en la caja (petición del usuario).
+- Web: `CUBEZON_DEV_ALLOW_SELF_PURCHASE=1` permite comprar en tus propias tiendas, solo en desarrollo (petición del usuario para probar en solitario).
+- Web: selector de tema (cookie `cz-theme`) y temas de superadmin en `/admin/temas` (solo sobrescriben tokens; para activarlos o programarlos tienen que pasar el contraste).
+- Web: nombre y slug de una tienda se cambian en cualquier momento sin nueva aprobación (el id es lo estable; los slugs viejos redirigen vía `shop_slug_history`). Logo y portada en el bucket `shop-media` (petición del usuario).
+- Web: los empleados (`shop_members`) entran al panel de su tienda (resumen, productos y pedidos); ajustes, perfil y empleados solo el dueño (petición del usuario).
+- Web (2026-10-10): pedidos FAILED con SHOP_REJECTED o EXPIRED se muestran como «Cancelado», no «Fallido» (`CANCELLED_REASONS`); un producto retirado se puede «Recuperar» (vuelve en pausa); «anuncios» pasa a «productos» también en la web (`/panel/[tienda]/productos`, `/anuncios` redirige). Peticiones del usuario.
+- Web (2026-10-10): rangos de tienda en el panel (tabla con ventana emergente para editar, petición del usuario); el personal ve empleados, y cada acción comprueba el permiso del rango. Migración web 20261010100000 (`set_default_shop_role`). Antes de crear una migración, comprobar que su versión no exista ya (chocó con una del plugin).
+- Web (2026-10-10): envío exprés al buzón en la caja (fase 3 del plugin). La tarifa se cobra una vez por compra, en la línea más cara (decisión de la web, aceptada por la sesión del plugin; el usuario puede cambiarla).
+- Sesiones web propias (`web_sessions`, se guarda solo el hash del token) en vez de Supabase Auth: el login es el código de `/cz link` y no hay email ni contraseña.
+- Stock limitado por almacenes físicos (petición del usuario): los objetos siguen en escrow (seguro contra duplicados) y los bloques solo fijan la capacidad. Zona = cuboide fijado por un admin, 27 unidades por bloque, y si sobra stock se bloquean los depósitos nuevos.
+- Un jugador puede tener varias tiendas (decisión del usuario, comunicada por la sesión web). El plugin ya lo soporta: nada asume una sola tienda.
+- Modo roleplay (petición del usuario): flujo «aceptar + paquete físico», dueño y empleados, caducidad en horas y el ordenador es un crafter. El modo solo cambia reiniciando. El dinero queda retenido entre aceptar y entregar, para que un reembolso nunca tenga que quitárselo al vendedor.
+- Objetos custom (petición del usuario): «compatibilidad general» sin elegir plugins concretos, así que hay adaptadores por reflexión, PDC configurables y el namespace del material para los mods. NBT: cada anuncio elige entre cualquier variante (KEY) y una muestra exacta (EXACT).
+- El ordenador es el panel de la empresa, también en modo automático (sin la sección de pedidos).
+- Versionado del plugin: subir el parche en cada cambio (petición del usuario).
+- Comandos solo en inglés (el usuario cambió de idea: antes había alias en español); recogida con clic derecho en la taquilla (decidido por el usuario el 2026-10-09).
+- Escrow por unidad (una fila = un ItemStack): el stock se calcula contando filas y la reserva es atómica por fila.
+
+## Aprendizajes y errores a evitar
+- El procesado de pedidos debe tratar un `item_data` que no se puede deserializar como pedido FAILED con reembolso, nunca como un crash.
+- PostgREST: `staff` y `shops` tienen dos FKs a `players`; al embeber hay que nombrar la FK (`players!shops_owner_uuid_fkey`) o da PGRST201.
+- Next 16 con Cache Components: `new Date()` en un componente da «Blocking Route» si no va tras `await connection()` (o `cookies()` resuelto en la petición). Lo que crea el juego (taquillas) no invalida los tags de caché de la web: caché corta, y la caja lee sin caché.
+- Con Cache Components, React revela el contenido en streaming con `requestAnimationFrame`, así que en una pestaña o panel oculto se queda en «Cargando…»: no es un fallo de la web.
+- Con `shadowJar` sin classifier, el `jar` normal necesita classifier propio (`plain`) o choca el nombre del archivo.
+- Para corregir un texto que ya existe en el es.yml del servidor, sube `lang-version` (antes se usaban claves nuevas): YamlDefaults solo añade claves que faltan.
+- `saveDefaultConfig()` no actualiza un config.yml existente: las opciones nuevas no se ven si no se copian (YamlDefaults).
+- En `Messages`, usar `getString(key)` y no `getString(key, fallback)`: el fallback explícito se salta los textos por defecto del jar y las claves nuevas salen como «Missing message» en servidores con un `es.yml` antiguo.
+- En Windows, parar el daemon de Gradle (`./gradlew --stop`) antes de mover o borrar carpetas del plugin.
+
+## Próximos pasos
+1. Nombre provisional «Cubezon»; confirmar el definitivo (sin logo ni marca de Amazon).
+2. Rotar la secret key de Supabase (se compartió en el chat).
+3. Probar en el juego el ciclo completo: depositar → comprar en la web → READY → recoger en la taquilla.
+4. Web: selector de tema, temas de superadmin, zona y almacenes de tienda en el panel de admin.
+
+## Cómo usarla
+- Lee MEMORY.md al empezar una tarea para entender el estado actual del proyecto y las decisiones ya tomadas.
+- Actualízala al terminar una tarea: estado actual, decisiones importantes con su porqué y errores o riesgos a evitar.
+- Si algo se convierte en una regla permanente, muévelo a AGENTS.md en lugar de dejarlo aquí.
+- No guardes nunca datos sensibles como claves, tokens o información personal.
