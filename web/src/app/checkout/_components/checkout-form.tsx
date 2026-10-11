@@ -3,31 +3,41 @@
 import { Fragment, useActionState, useState, type ReactNode } from "react";
 import { fmt, m } from "@/i18n";
 import type { DeliveryMethod } from "@/lib/delivery";
+import { formatMoney, fromCents } from "@/lib/format";
+import { parseTipInput, tipFieldName, type TipSettings } from "@/lib/tips";
 import { CommandText } from "@/components/shopping/command-text";
 import { worldName } from "@/components/shopping/world-name";
 import { Notice } from "@/components/ui/notice";
 import { placeOrder, type PlaceOrderState } from "../actions";
+import { TipsProvider } from "./checkout-tips";
 
 export type CheckoutFormLine = { listingId: string; units: number; price: string };
 export type CheckoutLocker = { id: string; name: string; world: string; x: number; y: number; z: number };
 export type CheckoutMailbox = { id: string; world: string; x: number; y: number; z: number };
+/** A shop of the checkout (one tip field each). */
+export type CheckoutShop = { id: string; name: string };
 
-/** Express delivery offer: `fee` is the decimal the action checks again, `feeLabel` the formatted one. */
-export type CheckoutExpress = { fee: string; feeLabel: string; mailboxes: CheckoutMailbox[] };
+/**
+ * Express delivery offer: `total` is the decimal sum of every express fee of the purchase, which
+ * the action checks again; `totalLabel` the formatted one. `perShop`: each shop charges its own.
+ */
+export type CheckoutExpress = { total: string; totalLabel: string; perShop: boolean; mailboxes: CheckoutMailbox[] };
 
 const INITIAL: PlaceOrderState = { error: null, details: [] };
 
 /**
  * Checkout form: hidden lines (listing, units and the unit price the buyer reviewed), the
- * delivery choice (locker, or express to the buyer's mailbox when the server offers it) and the
- * confirm button. The server-rendered lines and receipts (with and without the express fee)
- * come as props.
+ * delivery choice (locker, or express to the buyer's mailbox when the server offers it), the
+ * optional tip per shop and the confirm button. The server-rendered lines and receipts (with and
+ * without the express fee) come as props; the receipts add the tips through TipsProvider.
  */
 export function CheckoutForm({
   mode,
   lines,
   lockers,
   express,
+  shops,
+  tips,
   canConfirm,
   items,
   summary,
@@ -38,6 +48,9 @@ export function CheckoutForm({
   lockers: CheckoutLocker[];
   /** Null when express delivery is off. */
   express: CheckoutExpress | null;
+  shops: CheckoutShop[];
+  /** Null when tips are off. */
+  tips: TipSettings | null;
   canConfirm: boolean;
   items: ReactNode;
   summary: ReactNode;
@@ -48,17 +61,21 @@ export function CheckoutForm({
   const [delivery, setDelivery] = useState<DeliveryMethod>("LOCKER");
   const [lockerId, setLockerId] = useState(lockers[0]?.id ?? "");
   const [mailboxId, setMailboxId] = useState(express?.mailboxes[0]?.id ?? "");
+  const [tipInputs, setTipInputs] = useState<Record<string, string>>({});
   const selected = lockers.some((locker) => locker.id === lockerId) ? lockerId : (lockers[0]?.id ?? "");
   const mailboxes = express?.mailboxes ?? [];
   const selectedMailbox = mailboxes.some((mailbox) => mailbox.id === mailboxId) ? mailboxId : (mailboxes[0]?.id ?? "");
   const byMailbox = delivery === "MAILBOX" && express !== null && mailboxes.length > 0;
-  const ready = canConfirm && (byMailbox ? selectedMailbox !== "" : lockers.length > 0);
+  const tipResults = tips ? shops.map((shop) => parseTipInput(tipInputs[shop.id] ?? "", tips)) : [];
+  const tipCents = tipResults.reduce((sum, tip) => sum + (tip.ok ? tip.cents : 0), 0);
+  const tipsValid = tipResults.every((tip) => tip.ok);
+  const ready = canConfirm && tipsValid && (byMailbox ? selectedMailbox !== "" : lockers.length > 0);
 
   return (
     <form action={formAction} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <input type="hidden" name="mode" value={mode} />
       <input type="hidden" name="delivery" value={byMailbox ? "MAILBOX" : "LOCKER"} />
-      {byMailbox ? <input type="hidden" name="expressFee" value={express.fee} /> : null}
+      {byMailbox ? <input type="hidden" name="expressTotal" value={express.total} /> : null}
       {lines.map((line) => (
         <Fragment key={line.listingId}>
           <input type="hidden" name="listingId" value={line.listingId} />
@@ -81,13 +98,15 @@ export function CheckoutForm({
                 value="MAILBOX"
                 disabled={mailboxes.length === 0}
                 title={t.deliveryExpress}
-                badge={fmt(t.deliveryExpressFee, { fee: express.feeLabel })}
+                badge={fmt(t.deliveryExpressFee, { fee: express.totalLabel })}
                 hint={
                   mailboxes.length === 0 ? <CommandText template={t.noMailbox} command={m.commands.mailboxBuy} /> : t.deliveryExpressHint
                 }
               />
             </div>
-            {byMailbox && lines.length > 1 ? <p className="text-xs text-ink-3">{t.deliveryExpressOnce}</p> : null}
+            {byMailbox && lines.length > 1 ? (
+              <p className="text-xs text-ink-3">{express.perShop ? t.deliveryExpressOncePerShop : t.deliveryExpressOnce}</p>
+            ) : null}
           </fieldset>
         ) : null}
 
@@ -154,10 +173,48 @@ export function CheckoutForm({
             )}
           </fieldset>
         )}
+
+        {tips && shops.length > 0 ? (
+          <fieldset className="card flex flex-col gap-3 p-4" aria-describedby="tip-help">
+            <legend className="float-left w-full text-xl font-bold [font-stretch:75%]">{t.tipTitle}</legend>
+            <p id="tip-help" className="-mt-2 text-sm text-ink-2">
+              {fmt(t.tipHelp, { max: formatMoney(fromCents(tips.maxCents)) })}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {shops.map((shop, index) => {
+                const id = `tip-${index}`;
+                const result = tipResults[index];
+                const invalid = result !== undefined && !result.ok;
+                return (
+                  <div key={shop.id}>
+                    <label htmlFor={id} className="label">
+                      {shop.name}
+                    </label>
+                    <input
+                      id={id}
+                      name={tipFieldName(shop.id)}
+                      value={tipInputs[shop.id] ?? ""}
+                      onChange={(event) => setTipInputs((current) => ({ ...current, [shop.id]: event.target.value }))}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      placeholder={t.tipPlaceholder}
+                      className="input num w-full"
+                      aria-invalid={invalid ? true : undefined}
+                      aria-describedby={`tip-help ${id}-error`}
+                    />
+                    <p id={`${id}-error`} className="mt-1 text-sm font-semibold text-danger empty:hidden">
+                      {invalid ? fmt(t.tipInvalid, { max: formatMoney(fromCents(tips.maxCents)) }) : null}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </fieldset>
+        ) : null}
       </div>
 
       <aside className="flex flex-col gap-4 lg:sticky lg:top-4">
-        {byMailbox ? expressSummary : summary}
+        <TipsProvider tipCents={tipCents}>{byMailbox ? expressSummary : summary}</TipsProvider>
         {state.error ? (
           <Notice tone="danger">
             <p>{state.error}</p>

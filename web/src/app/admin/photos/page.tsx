@@ -74,7 +74,7 @@ function PhotoCard({ photo }: { photo: AdminListingPhoto }) {
               {t.view}
             </Link>
           ) : null}
-          <ActionForm action={removeListingPhotoAction} confirm={t.confirm} inline>
+          <ActionForm action={removeListingPhotoAction} confirm={t.confirm}>
             <input type="hidden" name="listingId" value={photo.listingId} />
             <SubmitButton pendingLabel={t.removing} className="btn btn-sm btn-ghost">
               {t.remove}

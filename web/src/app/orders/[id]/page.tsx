@@ -274,8 +274,9 @@ function Receipt({ order, serial, mode }: { order: OrderDetail; serial: string; 
         value={formatMoney(order.total)}
       />
       {order.expressFee > 0 ? <TicketRow label={r.express} value={formatMoney(order.expressFee)} /> : null}
+      {order.tip > 0 ? <TicketRow label={r.tip} value={formatMoney(order.tip)} /> : null}
       <TicketRule />
-      <TicketRow label={r.total} value={<Price amount={order.total + order.expressFee} size="md" />} strong />
+      <TicketRow label={r.total} value={<Price amount={order.total + order.expressFee + order.tip} size="md" />} strong />
       <p className="text-xs text-ink-2">
         {mode === "roleplay" && status === "pending" ? m.roleplay.status.receiptPending : r[status]}
       </p>

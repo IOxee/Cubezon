@@ -1,6 +1,11 @@
 # Language of the messages (file in plugins/Cubezon/lang/<locale>.yml).
 locale: es
 
+# Address of the Cubezon web (e.g. https://cubezon.example.com or http://localhost:3000). The company
+# computer offers clickable chat links to the shop's page and seller panel. Empty: no links.
+web:
+  url: ''
+
 # Database (PostgreSQL / Supabase).
 # The environment variables CUBEZON_DB_URL, CUBEZON_DB_USER and CUBEZON_DB_PASSWORD take precedence;
 # if CUBEZON_DB_URL is set, the database is enabled even when enabled is false.
@@ -51,6 +56,13 @@ orders:
     # processed, so deliveries feel like a shipment. 0 and 0 = immediately. Roleplay mode has no such wait.
     delay-min-minutes: 5
     delay-max-minutes: 10
+  # Tips: at checkout the buyer may add one per order. It is charged with the order and goes to the
+  # employee who delivers it (roleplay); with nobody delivering it (automatic mode, or the owner
+  # delivers) it goes to the shop. Refunded orders give it back.
+  tips:
+    enabled: true
+    # Highest tip per order.
+    max: 1000.0
   roleplay:
     # Hours to accept or reject an order; after that it is cancelled without charging.
     accept-hours: 48
@@ -162,6 +174,15 @@ mailbox:
     enabled: true
     # Extra fee the buyer pays per express order.
     fee: 100.0
+    # Who sets the express fee:
+    #   server:      every shop charges the fee above.
+    #   shop:        each shop sets its own (web seller panel or company computer); the fee above
+    #                applies while a shop has not set one. With per-shop fees each shop charges its
+    #                fee once per purchase.
+    #   shop-capped: like shop, but never above max-fee.
+    pricing: server
+    # Highest fee a shop may set with pricing: shop-capped.
+    max-fee: 500.0
     # true: the fee goes to the seller; false: the server keeps it.
     fee-to-seller: false
     # Roleplay mode only. false: an accepted express order lands in the buyer's mailbox on its own.

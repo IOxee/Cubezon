@@ -1,13 +1,24 @@
+import { EXPRESS_PRICINGS } from "@/lib/delivery";
+
 /**
  * Plugin options the server owner changes from /admin/features (public.feature_settings, key =
  * config.yml path). Same closed list and ranges as the plugin's FeatureSetting.java, which checks
  * every value again before applying it. An empty field means "what config.yml says".
  */
 
-export type FeatureKind = "boolean" | "integer" | "decimal";
+/** `choice`: one of a fixed list of lowercase words (`choices`), like the plugin's CHOICE kind. */
+export type FeatureKind = "boolean" | "integer" | "decimal" | "choice";
 export type FeatureGroup = "purchases" | "express" | "orders";
 
-type Def<K extends string> = { key: K; kind: FeatureKind; group: FeatureGroup; min: number; max: number };
+type Def<K extends string> = {
+  key: K;
+  kind: FeatureKind;
+  group: FeatureGroup;
+  min: number;
+  max: number;
+  /** Allowed values of a `choice` option, in display order. */
+  choices?: readonly string[];
+};
 
 const PRICE_MAX = 1_000_000_000;
 
@@ -22,16 +33,21 @@ export const FEATURES = [
   { key: "mailbox.max-per-player", kind: "integer", group: "purchases", min: 0, max: 20 },
   { key: "mailbox.express.enabled", kind: "boolean", group: "express", min: 0, max: 0 },
   { key: "mailbox.express.fee", kind: "decimal", group: "express", min: 0, max: PRICE_MAX },
+  { key: "mailbox.express.pricing", kind: "choice", group: "express", min: 0, max: 0, choices: EXPRESS_PRICINGS },
+  { key: "mailbox.express.max-fee", kind: "decimal", group: "express", min: 0, max: PRICE_MAX },
   { key: "mailbox.express.fee-to-seller", kind: "boolean", group: "express", min: 0, max: 0 },
   { key: "mailbox.express.hand-delivery", kind: "boolean", group: "express", min: 0, max: 0 },
   { key: "orders.automatic.delay-min-minutes", kind: "integer", group: "orders", min: 0, max: 1440 },
   { key: "orders.automatic.delay-max-minutes", kind: "integer", group: "orders", min: 0, max: 1440 },
   { key: "orders.roleplay.courier-max-percent", kind: "integer", group: "orders", min: 0, max: 100 },
+  { key: "orders.tips.enabled", kind: "boolean", group: "orders", min: 0, max: 0 },
+  { key: "orders.tips.max", kind: "decimal", group: "orders", min: 0, max: PRICE_MAX },
 ] as const satisfies readonly Def<string>[];
 
 export type FeatureKey = (typeof FEATURES)[number]["key"];
 export type FeatureDef = Def<FeatureKey>;
-export type FeatureValue = boolean | number;
+/** What the plugin has in force: booleans, numbers, or the word of a `choice`. */
+export type FeatureValue = boolean | number | string;
 export type FeatureValues = Partial<Record<FeatureKey, FeatureValue>>;
 /** null deletes the override (back to config.yml). */
 export type FeatureChange = { key: FeatureKey; value: string | null };
@@ -59,6 +75,7 @@ export function parseFeatureInput(def: FeatureDef, raw: unknown): string | null 
   if (typeof raw !== "string" || raw.trim() === "") return null;
   const text = raw.trim().toLowerCase().replace(",", ".");
   if (def.kind === "boolean") return text === "true" || text === "false" ? text : undefined;
+  if (def.kind === "choice") return def.choices?.includes(text) ? text : undefined;
   const pattern = def.kind === "integer" ? /^\d+$/ : /^\d+(\.\d{1,2})?$/;
   if (!pattern.test(text)) return undefined;
   const value = Number(text);
@@ -97,7 +114,8 @@ export function parseFeatureForm(get: (name: string) => unknown, published: Feat
  */
 export function isFeaturePending(stored: string | undefined, inForce: FeatureValue | undefined): boolean {
   if (stored === undefined || inForce === undefined) return false;
-  return typeof inForce === "boolean" ? stored !== String(inForce) : Number(stored) !== inForce;
+  if (typeof inForce === "number") return Number(stored) !== inForce;
+  return stored !== String(inForce);
 }
 
 /** plugin_settings.features (what the plugin has in force) → typed values; anything odd is dropped. */
@@ -113,10 +131,19 @@ export function parsePublishedFeatures(json: unknown): FeatureValues {
   const values: FeatureValues = {};
   for (const [key, value] of Object.entries(parsed)) {
     if (!isFeatureKey(key)) continue;
-    const kind = featureDef(key).kind;
-    if (kind === "boolean" ? typeof value === "boolean" : typeof value === "number" && Number.isFinite(value)) {
-      values[key] = value;
-    }
+    if (isPublishedValue(featureDef(key), value)) values[key] = value;
   }
   return values;
+}
+
+/** A published value of the right type for its option (a choice only with one of its words). */
+function isPublishedValue(def: FeatureDef, value: unknown): value is FeatureValue {
+  switch (def.kind) {
+    case "boolean":
+      return typeof value === "boolean";
+    case "choice":
+      return typeof value === "string" && (def.choices?.includes(value) ?? false);
+    default:
+      return typeof value === "number" && Number.isFinite(value);
+  }
 }

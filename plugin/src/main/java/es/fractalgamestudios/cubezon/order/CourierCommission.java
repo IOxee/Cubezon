@@ -74,11 +74,10 @@ public record CourierCommission(Mode mode, BigDecimal value) {
 
     /**
      * Whether whoever delivered the package earns the commission: an employee allowed to carry packages
-     * (orders.package), never the owner (who already gets the sale), never the buyer carrying their own
-     * order and never on a self purchase.
+     * (orders.package), even when they bought it themselves (the shop set what it pays). Never the
+     * owner (who already gets the sale) and never on a self purchase (no money moves).
      */
     public static boolean paysCourier(ClaimedOrder order, UUID courierId, boolean mayCarryPackages) {
-        return mayCarryPackages && !order.selfPurchase() && !courierId.equals(order.sellerId())
-                && !courierId.equals(order.buyerId());
+        return mayCarryPackages && !order.selfPurchase() && !courierId.equals(order.sellerId());
     }
 }

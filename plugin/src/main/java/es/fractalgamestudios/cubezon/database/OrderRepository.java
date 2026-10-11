@@ -48,7 +48,7 @@ public final class OrderRepository {
     /** Columns readOrder needs; every query that returns orders selects them (o = orders, s = shops, l = listings). */
     private static final String ORDER_COLUMNS = """
             o.id, o.buyer_uuid, s.owner_uuid as seller_uuid, o.listing_id, l.title,
-            s.name as shop_name, o.quantity, o.total, o.express_fee, o.mailbox_id, o.courier_uuid, o.courier_amount
+            s.name as shop_name, o.quantity, o.total, o.express_fee, o.mailbox_id, o.courier_uuid, o.courier_amount, o.tip
             """;
 
     /** What a delivery also needs to pay its courier; the ? is the courier. */
@@ -66,7 +66,7 @@ public final class OrderRepository {
                    s.owner_uuid as seller_uuid, s.status::text as shop_status, s.name as shop_name,
                    l.title, l.status::text as listing_status,
                    coalesce(k.name, '') as locker_name, coalesce(k.active, false) as locker_active,
-                   o.delivery_method, o.express_fee, o.mailbox_id, b.id is not null as mailbox_exists
+                   o.delivery_method, o.express_fee, o.tip, o.mailbox_id, b.id is not null as mailbox_exists
             from public.orders o
             join public.shops s on s.id = o.shop_id
             join public.listings l on l.id = o.listing_id
@@ -85,7 +85,7 @@ public final class OrderRepository {
                    s.owner_uuid as seller_uuid, s.status::text as shop_status, s.name as shop_name,
                    l.title, l.status::text as listing_status,
                    coalesce(k.name, '') as locker_name, coalesce(k.active, false) as locker_active,
-                   o.delivery_method, o.express_fee, o.mailbox_id, b.id is not null as mailbox_exists
+                   o.delivery_method, o.express_fee, o.tip, o.mailbox_id, b.id is not null as mailbox_exists
             from public.orders o
             join public.shops s on s.id = o.shop_id
             join public.listings l on l.id = o.listing_id
@@ -179,7 +179,8 @@ public final class OrderRepository {
             update public.orders o set courier_paid_at = now()
             from public.shops s, public.listings l
             where s.id = o.shop_id and l.id = o.listing_id
-              and o.status in ('READY', 'COLLECTED') and o.courier_amount > 0 and o.courier_paid_at is null
+              and o.status in ('READY', 'COLLECTED') and o.courier_uuid is not null
+              and (o.courier_amount > 0 or o.tip > 0) and o.courier_paid_at is null
             returning\s""" + ORDER_COLUMNS;
 
     private static final String EXPIRE_PENDING = """
@@ -219,27 +220,30 @@ public final class OrderRepository {
      * AVAILABLE units and checks each one with {@code validItem}. Anything wrong fails the order
      * in the same transaction, before any money moves.
      */
-    public ClaimResult claimNext(Predicate<byte[]> validItem, OrderDelay delay) throws SQLException {
+    public ClaimResult claimNext(Predicate<byte[]> validItem, OrderDelay delay, BigDecimal maxTip) throws SQLException {
         // Only orders that have already waited their own delay (between min and max, derived from the order id).
         return claim(SELECT_NEXT, statement -> {
             statement.setInt(1, delay.minSeconds());
             statement.setInt(2, delay.rangeSeconds());
-        }, validItem);
+        }, validItem, maxTip);
     }
 
     /** Roleplay: the shop accepts one of its PENDING orders. Same checks and reservation as claimNext. */
-    public ClaimResult claimById(UUID orderId, UUID shopId, Predicate<byte[]> validItem) throws SQLException {
+    public ClaimResult claimById(UUID orderId, UUID shopId, Predicate<byte[]> validItem, BigDecimal maxTip)
+            throws SQLException {
         return claim(SELECT_BY_ID, statement -> {
             statement.setObject(1, orderId);
             statement.setObject(2, shopId);
-        }, validItem);
+        }, validItem, maxTip);
     }
 
     private interface Binder {
         void bind(PreparedStatement statement) throws SQLException;
     }
 
-    private ClaimResult claim(String selectSql, Binder binder, Predicate<byte[]> validItem) throws SQLException {
+    /** {@code maxTip}: orders.tips.max, or 0 with tips off; a bigger tip fails the order before any charge. */
+    private ClaimResult claim(String selectSql, Binder binder, Predicate<byte[]> validItem, BigDecimal maxTip)
+            throws SQLException {
         try (Connection connection = database.connection()) {
             connection.setAutoCommit(false);
             try {
@@ -267,7 +271,8 @@ public final class OrderRepository {
                                 row.getInt("quantity"),
                                 row.getBigDecimal("total"),
                                 row.getBigDecimal("express_fee"),
-                                row.getObject("mailbox_id", UUID.class));
+                                row.getObject("mailbox_id", UUID.class),
+                                row.getBigDecimal("tip"));
                         shopStatus = row.getString("shop_status");
                         listingStatus = row.getString("listing_status");
                         lockerActive = row.getBoolean("locker_active");
@@ -285,6 +290,9 @@ public final class OrderRepository {
                 }
                 if (!toMailbox && !lockerActive) {
                     return failInClaim(connection, order, FailureReason.LOCKER_UNAVAILABLE);
+                }
+                if (!order.tipWithin(maxTip)) {
+                    return failInClaim(connection, order, FailureReason.INVALID_TIP);
                 }
 
                 List<UUID> unitIds = new ArrayList<>();
@@ -462,8 +470,8 @@ public final class OrderRepository {
             return Optional.of(order);
         }
         BigDecimal amount = commission.amountFor(order.total(), order.expressFee(), courier.maxPercent());
-        if (amount.signum() <= 0) {
-            return Optional.of(order);
+        if (amount.signum() <= 0 && order.tip().signum() <= 0) {
+            return Optional.of(order); // Nothing to pay them: the order stays without a courier.
         }
         try (PreparedStatement update = connection.prepareStatement(SET_COURIER)) {
             update.setObject(1, courier.id());
@@ -566,7 +574,8 @@ public final class OrderRepository {
                 row.getBigDecimal("express_fee"),
                 row.getObject("mailbox_id", UUID.class),
                 row.getObject("courier_uuid", UUID.class),
-                row.getBigDecimal("courier_amount"));
+                row.getBigDecimal("courier_amount"),
+                row.getBigDecimal("tip"));
     }
 
     /**

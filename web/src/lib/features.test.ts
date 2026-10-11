@@ -14,6 +14,16 @@ describe("parseFeatureInput", () => {
     expect(parseFeatureInput(featureDef("mailbox.express.enabled"), "false")).toBe("false");
     expect(parseFeatureInput(featureDef("computer.buy.price"), "12,5")).toBe("12.5");
     expect(parseFeatureInput(featureDef("orders.roleplay.courier-max-percent"), "30")).toBe("30");
+    expect(parseFeatureInput(featureDef("orders.tips.max"), "250,5")).toBe("250.5");
+  });
+
+  it("accepts only the listed words of a choice", () => {
+    const pricing = featureDef("mailbox.express.pricing");
+    expect(parseFeatureInput(pricing, "shop-capped")).toBe("shop-capped");
+    expect(parseFeatureInput(pricing, " SHOP ")).toBe("shop");
+    expect(parseFeatureInput(pricing, "server")).toBe("server");
+    expect(parseFeatureInput(pricing, "whatever")).toBeUndefined();
+    expect(parseFeatureInput(pricing, "")).toBeNull();
   });
 
   it("rejects malformed or out of range values", () => {
@@ -54,6 +64,8 @@ describe("isFeaturePending", () => {
     expect(isFeaturePending("true", true)).toBe(false);
     expect(isFeaturePending("12.5", 12.5)).toBe(false);
     expect(isFeaturePending("30", 10)).toBe(true);
+    expect(isFeaturePending("shop", "server")).toBe(true);
+    expect(isFeaturePending("shop", "shop")).toBe(false);
   });
 
   it("is never pending without an override or without published values", () => {
@@ -69,8 +81,17 @@ describe("parsePublishedFeatures", () => {
       "mailbox.express.fee": 100.0,
       "orders.mode": "roleplay",
       "mailbox.max-per-player": "lots",
+      "mailbox.express.pricing": "shop-capped",
+      "orders.tips.enabled": true,
     });
-    expect(parsePublishedFeatures(json)).toEqual({ "mailbox.express.enabled": false, "mailbox.express.fee": 100 });
+    expect(parsePublishedFeatures(json)).toEqual({
+      "mailbox.express.enabled": false,
+      "mailbox.express.fee": 100,
+      "mailbox.express.pricing": "shop-capped",
+      "orders.tips.enabled": true,
+    });
+    expect(parsePublishedFeatures(JSON.stringify({ "mailbox.express.pricing": "free" }))).toEqual({});
+    expect(parsePublishedFeatures(JSON.stringify({ "mailbox.express.pricing": 1 }))).toEqual({});
   });
 
   it("survives missing or broken JSON", () => {

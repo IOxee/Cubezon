@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, type FormEvent, type ReactNode } from "react";
+import { toast } from "@/components/ui/toaster";
 
 /** Result of an admin Server Action, shown under its form. */
 export type ActionState = { status: "idle" | "ok" | "error"; message: string };
@@ -8,27 +9,29 @@ export type ActionState = { status: "idle" | "ok" | "error"; message: string };
 const IDLE: ActionState = { status: "idle", message: "" };
 
 /**
- * Form bound to a Server Action with useActionState. Shows the action's message and, on
- * error, restores what the admin typed (React resets the form after every action).
- * `confirm` asks before submitting (destructive actions). `inline` is for single buttons in a row:
- * the message floats under the button instead of pushing the rest of the row around.
+ * Form bound to a Server Action with useActionState. The action's message shows as a temporary
+ * notification and, on error, what the admin typed is restored (React resets the form after every
+ * action). `confirm` asks before submitting (destructive actions).
  */
 export function ActionForm({
   action,
   children,
   className,
   confirm,
-  inline = false,
 }: {
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
   children: ReactNode;
   className?: string;
   confirm?: string;
-  inline?: boolean;
 }) {
   const [state, formAction] = useActionState(action, IDLE);
   const formRef = useRef<HTMLFormElement>(null);
   const submitted = useRef<FormData | null>(null);
+
+  // Each result is a temporary notification (components/ui/toaster), not text left under the form.
+  useEffect(() => {
+    if (state.status !== "idle") toast(state.status === "ok" ? "success" : "error", state.message);
+  }, [state]);
 
   useEffect(() => {
     const form = formRef.current;
@@ -56,20 +59,8 @@ export function ActionForm({
   }
 
   return (
-    <form ref={formRef} action={formAction} onSubmit={onSubmit} className={inline ? `relative ${className ?? ""}` : className}>
+    <form ref={formRef} action={formAction} onSubmit={onSubmit} className={className}>
       {children}
-      {state.message ? (
-        <p
-          role={state.status === "error" ? "alert" : "status"}
-          className={`font-semibold ${state.status === "error" ? "text-danger" : "text-success"} ${
-            inline
-              ? "absolute top-full right-0 z-10 mt-1 w-max max-w-xs border border-edge bg-surface px-2 py-1 text-xs shadow-hard-sm"
-              : "basis-full text-sm"
-          }`}
-        >
-          {state.message}
-        </p>
-      ) : null}
     </form>
   );
 }

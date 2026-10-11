@@ -48,16 +48,16 @@ async function EditTheme({
             {t.back}
           </Link>
           {theme.isActive ? (
-            <ActionForm inline action={deactivateThemeAction}>
+            <ActionForm action={deactivateThemeAction}>
               <SubmitButton className="btn btn-sm">{t.actions.deactivate}</SubmitButton>
             </ActionForm>
           ) : passesContrast(theme.tokens) ? (
-            <ActionForm inline action={activateThemeAction}>
+            <ActionForm action={activateThemeAction}>
               <input type="hidden" name="themeId" value={theme.id} />
               <SubmitButton className="btn btn-primary btn-sm">{t.actions.activate}</SubmitButton>
             </ActionForm>
           ) : null}
-          <ActionForm inline action={deleteThemeAction} confirm={fmt(t.actions.confirmDelete, { name: theme.name })}>
+          <ActionForm action={deleteThemeAction} confirm={fmt(t.actions.confirmDelete, { name: theme.name })}>
             <input type="hidden" name="themeId" value={theme.id} />
             <SubmitButton className="btn btn-danger btn-sm">{t.actions.delete}</SubmitButton>
           </ActionForm>

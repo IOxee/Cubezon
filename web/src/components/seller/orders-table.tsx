@@ -1,6 +1,6 @@
-import { m, plural } from "@/i18n";
+import { fmt, m, plural } from "@/i18n";
 import type { SellerOrder } from "@/lib/data/seller";
-import { formatDateTime, formatInteger, serialOf } from "@/lib/format";
+import { formatAmount, formatDateTime, formatInteger, serialOf } from "@/lib/format";
 import { DEFAULT_ORDERS_MODE, isProcessing, sellerPayout, type OrdersMode } from "@/lib/order-display";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { OrderStatusStamp } from "@/components/ui/order-status";
@@ -65,6 +65,16 @@ export function OrdersTable({
               </td>
               <td className="px-3 py-2 text-right">
                 <Price amount={order.total} size="sm" />
+                {order.expressFee > 0 ? (
+                  <span className="num block text-xs text-ink-3">
+                    {fmt(m.seller.orders.expressExtra, { amount: formatAmount(order.expressFee) })}
+                  </span>
+                ) : null}
+                {order.tip > 0 ? (
+                  <span className="num block text-xs text-ink-3">
+                    {fmt(m.seller.orders.tipExtra, { amount: formatAmount(order.tip) })}
+                  </span>
+                ) : null}
               </td>
               <td className="px-3 py-2 whitespace-nowrap">
                 {order.delivery === "MAILBOX" ? m.seller.orders.mailbox : (order.lockerName ?? m.common.none)}

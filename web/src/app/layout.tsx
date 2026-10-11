@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { THEME_SCRIPT } from "@/components/theme/theme-preference";
 import { ThemeStyle } from "@/components/theme/theme-style";
+import { Toaster } from "@/components/ui/toaster";
 import { m } from "@/i18n";
 import "./globals.css";
 
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
+        <Toaster />
       </body>
     </html>
   );

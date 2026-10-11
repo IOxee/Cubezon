@@ -98,7 +98,6 @@ async function Team() {
         <tbody>
           {members.map((member) => {
             const isMe = member.uuid === me.uuid;
-            const otherRole = member.role === "SUPERADMIN" ? "ADMIN" : "SUPERADMIN";
             return (
               <tr key={member.uuid}>
                 <td className={`${td} font-semibold`}>
@@ -113,29 +112,44 @@ async function Team() {
                 <td className={`${td} num whitespace-nowrap`}>{formatDate(member.since)}</td>
                 <td className={td}>{member.grantedByName ?? m.common.none}</td>
                 <td className={td}>
-                  {isMe ? (
-                    <span className="text-xs text-ink-3">{t.selfHint}</span>
-                  ) : (
-                    <div className="flex flex-wrap items-start gap-2">
-                      <ActionForm action={setStaffRoleAction} className="flex flex-wrap gap-2">
-                        <input type="hidden" name="playerUuid" value={member.uuid} />
-                        <input type="hidden" name="role" value={otherRole} />
-                        <SubmitButton className="btn btn-sm" pendingLabel={t.saving}>
-                          {t.makeRole[otherRole]}
-                        </SubmitButton>
-                      </ActionForm>
-                      <ActionForm
-                        action={removeStaffAction}
-                        confirm={fmt(t.removeConfirm, { name: member.name })}
-                        className="flex flex-wrap gap-2"
-                      >
-                        <input type="hidden" name="playerUuid" value={member.uuid} />
-                        <SubmitButton className="btn btn-danger btn-sm" pendingLabel={t.saving}>
-                          {t.remove}
-                        </SubmitButton>
-                      </ActionForm>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Role switch: the current role is pressed; the other one submits the change. */}
+                    <ActionForm
+                      action={setStaffRoleAction}
+                      confirm={isMe ? t.demoteSelfConfirm : undefined}
+                      className="inline-grid grid-cols-2 border-2 border-edge bg-surface text-sm"
+                    >
+                      <input type="hidden" name="playerUuid" value={member.uuid} />
+                      <span role="group" aria-label={fmt(t.roleGroup, { name: member.name })} className="contents">
+                        {STAFF_ROLES.map((role) => {
+                          const current = member.role === role;
+                          return (
+                            <SubmitButton
+                              key={role}
+                              name="role"
+                              value={role}
+                              disabled={current}
+                              pendingLabel={t.saving}
+                              className={`px-3 py-1 font-semibold not-first:border-l-2 not-first:border-edge ${
+                                current ? "bg-ink text-paper" : "hover:bg-paper"
+                              }`}
+                            >
+                              {m.status.staff[role]}
+                            </SubmitButton>
+                          );
+                        })}
+                      </span>
+                    </ActionForm>
+                    <ActionForm
+                      action={removeStaffAction}
+                      confirm={isMe ? t.removeSelfConfirm : fmt(t.removeConfirm, { name: member.name })}
+                    >
+                      <input type="hidden" name="playerUuid" value={member.uuid} />
+                      <SubmitButton className="btn btn-danger btn-sm" pendingLabel={t.saving}>
+                        {t.remove}
+                      </SubmitButton>
+                    </ActionForm>
+                  </div>
                 </td>
               </tr>
             );

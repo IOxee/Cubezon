@@ -346,8 +346,13 @@ public final class RoleplayController {
     /** Panel: an accepted order's package, printed again (copies are harmless). */
     void reprintPackage(Player player, ShopOrderView order) {
         SpecialItemShop.giveOrDrop(player, packageOf(order));
-        player.sendMessage(plugin.messages().get("computer.package-reprinted",
-                Placeholder.unparsed("locker", order.lockerName())));
+        // An express package goes to the buyer's mailbox: say whose and where, there is no locker name.
+        player.sendMessage(order.toMailbox()
+                ? plugin.messages().get("computer.package-reprinted-mailbox",
+                        Placeholder.unparsed("owner", order.buyerName()),
+                        Placeholder.unparsed("position", order.mailboxPosition() == null ? "?" : order.mailboxPosition()))
+                : plugin.messages().get("computer.package-reprinted",
+                        Placeholder.unparsed("locker", order.lockerName())));
     }
 
     void accept(Player player, ComputerBlock computer, ShopOrderView view) {
@@ -376,7 +381,7 @@ public final class RoleplayController {
                     plugin.sounds().play(player, Sounds.Event.ERROR);
                     return;
                 }
-                result = orders.claimById(view.id(), computer.shopId(), OrderProcessor::isValidItem);
+                result = orders.claimById(view.id(), computer.shopId(), OrderProcessor::isValidItem, OrderProcessor.maxTip(plugin.getConfig()));
             } catch (SQLException | RuntimeException e) {
                 busyOrders.remove(view.id());
                 plugin.getLogger().log(Level.WARNING, "Could not accept order " + view.id(), e);
@@ -426,7 +431,7 @@ public final class RoleplayController {
                     }
                     if (!orders.markAccepted(order.id())) {
                         plugin.getLogger().severe("Order " + order.id() + " was charged but is no longer claimed; check it by hand"
-                                + " (buyer " + order.buyerId() + ", " + order.total() + ").");
+                                + " (buyer " + order.buyerId() + ", " + order.charged() + ").");
                         return;
                     }
                     runOnMainThread(() -> {
@@ -667,7 +672,7 @@ public final class RoleplayController {
         UUID courier = order.courierId();
         boolean paid;
         try {
-            paid = courier != null && wallet.deposit(courier, order.courierAmount());
+            paid = courier != null && wallet.deposit(courier, order.courierPayout());
         } catch (RuntimeException e) {
             plugin.getLogger().log(Level.WARNING, "Economy error paying the courier of order " + order.id(), e);
             paid = false;
@@ -680,10 +685,12 @@ public final class RoleplayController {
             }
             return;
         }
-        notifyOnline(courier, plugin.messages().get("order.courier-paid", TagResolver.resolver(
-                Placeholder.unparsed("title", order.title()),
-                Placeholder.unparsed("shop", order.shopName()),
-                Placeholder.unparsed("amount", money(order.courierAmount())))));
+        notifyOnline(courier, plugin.messages().get(order.tip().signum() > 0 ? "order.courier-paid-tip" : "order.courier-paid",
+                TagResolver.resolver(
+                        Placeholder.unparsed("title", order.title()),
+                        Placeholder.unparsed("shop", order.shopName()),
+                        Placeholder.unparsed("amount", money(order.courierPayout())),
+                        Placeholder.unparsed("tip", money(order.tip())))));
     }
 
     private void releaseCourierPayout(OrderRepository orders, ClaimedOrder order) {
@@ -692,7 +699,7 @@ public final class RoleplayController {
                 orders.clearCourierPayout(order.id());
             } catch (SQLException e) {
                 plugin.getLogger().log(Level.SEVERE, "Courier " + order.courierId() + " of order " + order.id() + " was not paid "
-                        + order.courierAmount() + " and the payout could not be queued again. Pay them by hand.", e);
+                        + order.courierPayout() + " and the payout could not be queued again. Pay them by hand.", e);
             }
         });
     }

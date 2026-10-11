@@ -54,6 +54,7 @@ export const roleplay = {
     EXPIRED: "La tienda no atendió el pedido a tiempo, así que se canceló solo.",
     DELIVERY_EXPIRED:
       "La tienda aceptó el pedido, pero no lo entregó en la taquilla a tiempo. Se te ha devuelto el dinero.",
+    INVALID_TIP: "La propina superaba el máximo del servidor (o las propinas están desactivadas). No se te ha cobrado nada.",
   },
 
   checkout: {

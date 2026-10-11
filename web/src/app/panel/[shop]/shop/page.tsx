@@ -2,21 +2,31 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { fmt, m } from "@/i18n";
+import { getExpressSettings } from "@/lib/data/delivery";
 import { getShopListings, requireSellerShop, type SellerShop } from "@/lib/data/seller";
+import {
+  shopExpressFeeCents,
+  shopExpressFeeMaxCents,
+  shopsSetExpressFee,
+  type ExpressSettings,
+} from "@/lib/delivery";
+import { formatMoney, fromCents, toCents } from "@/lib/format";
 import { inkStyle } from "@/lib/inks";
 import { publicLocation } from "@/lib/seller/profile";
 import { panelPath } from "@/lib/seller/shops";
 import { canEditShop } from "@/lib/seller/stats";
+import { priceInputValue } from "@/lib/seller/validation";
 import type { ShopZone } from "@/lib/seller/storage";
 import { shopMediaUrl } from "@/lib/shop-media";
 import { ShopHeader } from "@/components/catalog/shop-header";
+import { ExpressFeeForm } from "@/components/seller/express-fee-form";
 import { ShopForm } from "@/components/seller/shop-form";
 import { ShopImageForm } from "@/components/seller/shop-image-form";
 import { ShopProfileForm, type FeaturedOption } from "@/components/seller/shop-profile-form";
 import { ShopStatusStamp } from "@/components/seller/shop-status";
 import { Notice } from "@/components/ui/notice";
 import { PanelHeader, PanelSkeleton } from "../../_components/panel-ui";
-import { shopImageAction, updateShopAction, updateShopProfileAction } from "./actions";
+import { shopImageAction, updateExpressFeeAction, updateShopAction, updateShopProfileAction } from "./actions";
 
 export const metadata: Metadata = { title: m.seller.meta.shop };
 
@@ -38,7 +48,7 @@ async function ShopSettings({ params, searchParams }: Pick<Props, "params" | "se
   const [{ shop: shopSlug }, query] = await Promise.all([params, searchParams]);
   const { player, shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "shop"), { ownerOnly: true });
   const editable = canEditShop(shop.status);
-  const listings = editable ? await getShopListings(shop.id) : [];
+  const [listings, express] = await Promise.all([editable ? getShopListings(shop.id) : [], getExpressSettings()]);
   const featuredOptions: FeaturedOption[] = listings
     .filter((listing) => listing.status === "ACTIVE")
     .map((listing) => ({ id: listing.id, title: listing.title, material: listing.material, available: listing.available }));
@@ -142,6 +152,7 @@ async function ShopSettings({ params, searchParams }: Pick<Props, "params" | "se
 
       <aside className="space-y-4 lg:self-start">
         <StatusCard shop={shop} />
+        {editable && express.enabled && shopsSetExpressFee(express) ? <ExpressFeeCard shop={shop} express={express} /> : null}
         <ZoneCard zone={shop.zone} />
       </aside>
     </div>
@@ -171,6 +182,43 @@ function StatusCard({ shop }: { shop: SellerShop }) {
           {m.seller.overview.fixRequest}
         </Link>
       ) : null}
+    </section>
+  );
+}
+
+/**
+ * The shop's own express fee, while the server lets shops set it: the server's fee, the cap
+ * (shop-capped) and what the shop charges now.
+ */
+function ExpressFeeCard({ shop, express }: { shop: SellerShop; express: ExpressSettings }) {
+  const t = m.seller.expressFee;
+  const ownCents = shop.expressFee === null ? null : toCents(shop.expressFee);
+  const money = (cents: number) => formatMoney(fromCents(cents));
+  return (
+    <section aria-labelledby="shop-express-fee" className="card p-4">
+      <h2 id="shop-express-fee" className="text-lg">
+        {t.title}
+      </h2>
+      <p className="mt-1 mb-3 text-sm text-ink-2">{t.lead}</p>
+      <dl className="mb-4 grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
+        <dt className="text-ink-2">{t.serverFee}</dt>
+        <dd className="num text-right">{money(express.feeCents)}</dd>
+        {express.pricing === "shop-capped" ? (
+          <>
+            <dt className="text-ink-2">{t.cap}</dt>
+            <dd className="num text-right">{money(express.maxFeeCents)}</dd>
+          </>
+        ) : null}
+        <dt className="font-semibold">{t.current}</dt>
+        <dd className="num text-right font-semibold">{money(shopExpressFeeCents(express, ownCents))}</dd>
+      </dl>
+      <ExpressFeeForm
+        key={ownCents ?? ""}
+        action={updateExpressFeeAction.bind(null, shop.slug)}
+        initial={shop.expressFee === null ? "" : priceInputValue(shop.expressFee)}
+        serverFeeLabel={money(express.feeCents)}
+        maxLabel={money(shopExpressFeeMaxCents(express))}
+      />
     </section>
   );
 }

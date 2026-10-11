@@ -40,7 +40,9 @@ export type FieldErrorCode =
   | "priceRange"
   | "statusInvalid"
   | "taglineLength"
-  | "featuredTooMany";
+  | "featuredTooMany"
+  | "expressFeeFormat"
+  | "expressFeeRange";
 
 export type FormErrorCode =
   | "shopLimit"
@@ -49,9 +51,12 @@ export type FormErrorCode =
   | "suspended"
   | "notFound"
   | "removed"
+  | "expressFeeLocked"
   | "generic";
 
 export type ShopField = "name" | "slug" | "description" | "ink";
+/** The shop's own express fee (panel shop settings). */
+export type ExpressFeeField = "expressFee";
 export type ListingField = "title" | "description" | "item" | "unitAmount" | "unitPrice" | "status";
 
 export type FieldErrors<F extends string> = Partial<Record<F, FieldErrorCode>>;

@@ -24,7 +24,9 @@ public enum FailureReason {
     /** Roleplay: the shop did not answer in time (nothing was charged). */
     EXPIRED,
     /** Roleplay: accepted (charged) but never delivered in time; the buyer is refunded. */
-    DELIVERY_EXPIRED;
+    DELIVERY_EXPIRED,
+    /** The tip is above orders.tips.max, or tips are off (nothing was charged). */
+    INVALID_TIP;
 
     public String status() {
         return this == PAYOUT_FAILED || this == DELIVERY_EXPIRED ? "REFUNDED" : "FAILED";

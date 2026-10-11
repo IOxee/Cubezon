@@ -80,6 +80,7 @@ describe("failureReasonText", () => {
     expect(failureReasonText("EXPIRED")).toBe(m.roleplay.failureReason.EXPIRED);
     expect(failureReasonText("DELIVERY_EXPIRED")).toBe(m.roleplay.failureReason.DELIVERY_EXPIRED);
     expect(failureReasonText("DELIVERY_EXPIRED")).toContain("devuelto");
+    expect(failureReasonText("INVALID_TIP")).toBe(m.roleplay.failureReason.INVALID_TIP);
   });
 });
 

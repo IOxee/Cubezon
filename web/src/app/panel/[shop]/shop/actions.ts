@@ -3,6 +3,7 @@
 import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { CATALOG_TAG } from "@/lib/data/catalog";
+import { getExpressSettings, setShopExpressFee } from "@/lib/data/delivery";
 import {
   deleteShopMedia,
   getShopListings,
@@ -15,10 +16,11 @@ import {
   type SellerShop,
 } from "@/lib/data/seller";
 import { SHOPS_TAG, shopTag } from "@/lib/data/shops";
+import { validateShopExpressFee } from "@/lib/delivery";
 import { validateProfile, type ProfileField } from "@/lib/seller/profile";
 import { panelPath } from "@/lib/seller/shops";
 import { canEditShop } from "@/lib/seller/stats";
-import { errorState, validateShop, type FormState, type ShopField } from "@/lib/seller/validation";
+import { errorState, validateShop, type ExpressFeeField, type FormState, type ShopField } from "@/lib/seller/validation";
 import {
   isShopMediaKind,
   isShopMediaPathOf,
@@ -180,4 +182,33 @@ export async function shopImageAction(
   updatePublicTags(shop);
   refresh();
   return { status: "saved", error: null };
+}
+
+/**
+ * The shop's own express fee (empty = the server's), only while the server lets shops set it
+ * (express_pricing shop | shop-capped) and within the cap. Settings are read fresh here.
+ */
+export async function updateExpressFeeAction(
+  shopSlug: string,
+  _state: FormState<ExpressFeeField>,
+  formData: FormData,
+): Promise<FormState<ExpressFeeField>> {
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "shop"), OWNER_ONLY);
+  if (!canEditShop(shop.status)) return errorState({}, "suspended");
+
+  try {
+    const parsed = validateShopExpressFee(await getExpressSettings(), formData.get("expressFee"));
+    if (!parsed.ok) {
+      return parsed.error === "expressFeeLocked"
+        ? errorState({}, "expressFeeLocked")
+        : errorState({ expressFee: parsed.error });
+    }
+    await setShopExpressFee(shop.id, parsed.cents);
+  } catch (error) {
+    console.error("updateExpressFeeAction", error);
+    return errorState({}, "generic");
+  }
+
+  refresh();
+  return { status: "saved", fieldErrors: {}, formError: null };
 }

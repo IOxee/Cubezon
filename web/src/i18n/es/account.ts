@@ -135,6 +135,7 @@ export const account = {
       delivery: "Entrega",
       deliveryMailbox: "Buzón (exprés)",
       express: "Envío exprés",
+      tip: "Propina",
       perUnit: { one: "{count} objeto por unidad", other: "{count} objetos por unidad" },
       line: "{units} × {price}",
       total: "Total",

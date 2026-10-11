@@ -123,7 +123,8 @@ class CourierCommissionTest {
         assertFalse(CourierCommission.paysCourier(order(BUYER), OWNER, true), "the owner already gets the sale");
         assertFalse(CourierCommission.paysCourier(order(BUYER), EMPLOYEE, false), "needs orders.package");
         assertFalse(CourierCommission.paysCourier(order(OWNER), EMPLOYEE, true), "self purchases move no money");
-        assertFalse(CourierCommission.paysCourier(order(EMPLOYEE), EMPLOYEE, true), "nobody earns carrying their own order");
+        assertTrue(CourierCommission.paysCourier(order(EMPLOYEE), EMPLOYEE, true),
+                "an employee who carries their own order still did the delivery: the shop pays it");
     }
 
     @Test

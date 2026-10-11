@@ -136,6 +136,7 @@ order:
   ready-mailbox: '<green>Tu pedido <quantity>x «<title>» ha llegado a tu buzón.</green> <gray>Haz clic derecho en él para recogerlo.</gray>'
   accepted: '<green>«<shop>» ha aceptado tu pedido <quantity>x «<title>»: está en preparación.</green> <gray>Se te ha cobrado; el vendedor recibe el dinero al entregarlo.</gray>'
   courier-paid: '<green>Has cobrado <amount> de comisión por entregar «<title>» de «<shop>».</green>'
+  courier-paid-tip: '<green>Has cobrado <amount> por entregar «<title>» de «<shop>»</green> <gray>(incluye <tip> de propina).</gray>'
   reason:
     OUT_OF_STOCK: 'no queda stock suficiente'
     LISTING_UNAVAILABLE: 'el producto o la tienda ya no están disponibles'
@@ -189,6 +190,7 @@ computer:
   rejected: '<yellow>Pedido «<title>» rechazado.</yellow>'
   order-gone: '<yellow>Ese pedido ya no está pendiente.</yellow>'
   package-reprinted: '<green>Paquete impreso. Llévalo a la taquilla «<locker>».</green>'
+  package-reprinted-mailbox: '<green>Paquete impreso. Llévalo al buzón de <owner></green> <gray>(<position>) y haz clic derecho en él.</gray>'
   package-lore-mailbox: '<gray>Entrégalo en el buzón de</gray> <white><locker></white> <gray>(clic derecho).</gray>'
   wrong-mailbox: '<red>Este paquete va al buzón de <owner>.</red>'
   delivered-mailbox: '<green>Paquete «<title>» entregado en el buzón de <owner>.</green>'
@@ -389,6 +391,12 @@ panel:
     buy-terminal: '<green>Comprar una terminal de reparto</green>'
     buy-terminal-hint: '<gray>Solo imprime paquetes; se puede colocar lejos de la tienda.</gray>'
     buy-hint: '<gray>Se paga con dinero del juego. Clic izquierdo: 1 · Clic derecho: elegir cuántos</gray>'
+  web:
+    button: '<aqua>Tienda en la web</aqua>'
+    hint: '<gray>Te deja en el chat un enlace a tu tienda y a su panel.</gray>'
+    intro: '<gray>«<shop>» en la web:</gray>'
+    storefront: '<aqua><u>Ver la tienda</u></aqua>'
+    panel: '<aqua><u>Panel de vendedor</u></aqua>'
   commission:
     title: 'Comisión de reparto · <shop_short>'
     button: '<gold>Comisión de reparto</gold>'
@@ -408,6 +416,20 @@ panel:
       FIXED: '<value> por entrega'
     saved: '<green>Comisión de reparto: <commission>.</green>'
     failed: '<red>No se pudo cambiar la comisión (solo el dueño puede).</red>'
+  express-fee:
+    button: '<aqua>Precio del envío exprés</aqua>'
+    current: '<gray>Ahora:</gray> <white><fee></white> <gray>(<origin>)</gray>'
+    hint: '<gray>Lo paga el comprador al recibir en su buzón. Precio del servidor: <server>. <max></gray>'
+    max: 'Máximo: <max>.'
+    no-max: 'Sin máximo.'
+    from-server: 'precio del servidor'
+    from-shop: 'precio de tu tienda'
+    click: '<yellow>Clic izquierdo: poner precio · Clic derecho: usar el del servidor</yellow>'
+    owner-only: '<gray>Solo el dueño lo cambia.</gray>'
+    saved: '<green>Precio del envío exprés: <fee>.</green>'
+    reset: '<green>Tu tienda vuelve a usar el precio exprés del servidor.</green>'
+    too-high: '<red>Ese precio supera el máximo del servidor. <max></red>'
+    failed: '<red>No se pudo cambiar el precio (solo el dueño puede).</red>'
 slots:
   show: '<gray><player>:</gray> <white><used>/<slots></white> <gray>tiendas (<free> libres) ·</gray> <origin>'
   set: '<green>Cupo de <player> actualizado: <used>/<slots> tiendas (<free> libres) ·</green> <origin>'
@@ -426,6 +448,7 @@ prompt:
   product-price: '<yellow>Escribe el precio por unidad (por ejemplo 250 o 12,50), o <white>cancelar</white>.</yellow>'
   commission-percent: '<yellow>Escribe el porcentaje de comisión (1-<max>), o <white>cancelar</white>.</yellow>'
   commission-fixed: '<yellow>Escribe la comisión por entrega (por ejemplo 25 o 12,50), o <white>cancelar</white>.</yellow>'
+  express-fee: '<yellow>Escribe el precio del envío exprés de tu tienda (por ejemplo 50 o 12,50), o <white>cancelar</white>.</yellow>'
   cancelled: '<gray>Cancelado.</gray>'
   expired: '<gray>Has tardado demasiado; vuelve a intentarlo desde el ordenador.</gray>'
 permissions:

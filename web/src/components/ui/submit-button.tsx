@@ -11,6 +11,7 @@ export function SubmitButton({
   name,
   value,
   formAction,
+  disabled = false,
 }: {
   children: ReactNode;
   pendingLabel?: ReactNode;
@@ -18,14 +19,16 @@ export function SubmitButton({
   name?: string;
   value?: string;
   formAction?: (formData: FormData) => void | Promise<void>;
+  /** Also disabled when nothing would change (e.g. the option already chosen). */
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       className={className}
-      disabled={pending}
-      aria-disabled={pending}
+      disabled={pending || disabled}
+      aria-disabled={pending || disabled}
       name={name}
       value={value}
       formAction={formAction}

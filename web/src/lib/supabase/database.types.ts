@@ -424,6 +424,7 @@ export type Database = {
           seller_paid_at: string | null
           shop_id: string
           status: Database["public"]["Enums"]["order_status"]
+          tip: number
           total: number
           unit_price: number
           updated_at: string
@@ -449,6 +450,7 @@ export type Database = {
           seller_paid_at?: string | null
           shop_id: string
           status?: Database["public"]["Enums"]["order_status"]
+          tip?: number
           total: number
           unit_price: number
           updated_at?: string
@@ -474,6 +476,7 @@ export type Database = {
           seller_paid_at?: string | null
           shop_id?: string
           status?: Database["public"]["Enums"]["order_status"]
+          tip?: number
           total?: number
           unit_price?: number
           updated_at?: string
@@ -969,6 +972,7 @@ export type Database = {
           courier_commission_value: number
           created_at: string
           description: string
+          express_fee: number | null
           featured_listing_ids: string[]
           id: string
           ink: string
@@ -998,6 +1002,7 @@ export type Database = {
           courier_commission_value?: number
           created_at?: string
           description?: string
+          express_fee?: number | null
           featured_listing_ids?: string[]
           id?: string
           ink?: string
@@ -1027,6 +1032,7 @@ export type Database = {
           courier_commission_value?: number
           created_at?: string
           description?: string
+          express_fee?: number | null
           featured_listing_ids?: string[]
           id?: string
           ink?: string

@@ -203,9 +203,21 @@ async function OrderDetail({ params }: { params: PageProps<"/admin/orders/[id]">
                 <dd className="text-right">
                   <Price amount={order.expressFee} size="sm" />
                 </dd>
+              </>
+            ) : null}
+            {order.tip > 0 ? (
+              <>
+                <dt className="text-ink-2">{t.tip}</dt>
+                <dd className="text-right">
+                  <Price amount={order.tip} size="sm" />
+                </dd>
+              </>
+            ) : null}
+            {order.expressFee > 0 || order.tip > 0 ? (
+              <>
                 <dt className="text-ink-2">{t.charged}</dt>
                 <dd className="text-right">
-                  <Price amount={order.total + order.expressFee} size="sm" />
+                  <Price amount={order.total + order.expressFee + order.tip} size="sm" />
                 </dd>
               </>
             ) : null}

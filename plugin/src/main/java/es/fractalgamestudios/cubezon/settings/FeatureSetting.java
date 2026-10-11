@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -28,24 +29,39 @@ public enum FeatureSetting {
     MAILBOX_MAX("mailbox.max-per-player", Kind.INTEGER, 0, 20),
     EXPRESS_ENABLED("mailbox.express.enabled", Kind.BOOLEAN, 0, 0),
     EXPRESS_FEE("mailbox.express.fee", Kind.DECIMAL, 0, 1_000_000_000),
+    EXPRESS_PRICING("mailbox.express.pricing", "server", "shop", "shop-capped"),
+    EXPRESS_MAX_FEE("mailbox.express.max-fee", Kind.DECIMAL, 0, 1_000_000_000),
     EXPRESS_FEE_TO_SELLER("mailbox.express.fee-to-seller", Kind.BOOLEAN, 0, 0),
     HAND_DELIVERY("mailbox.express.hand-delivery", Kind.BOOLEAN, 0, 0),
     DELAY_MIN("orders.automatic.delay-min-minutes", Kind.INTEGER, 0, 1440),
     DELAY_MAX("orders.automatic.delay-max-minutes", Kind.INTEGER, 0, 1440),
-    COURIER_MAX_PERCENT("orders.roleplay.courier-max-percent", Kind.INTEGER, 0, 100);
+    COURIER_MAX_PERCENT("orders.roleplay.courier-max-percent", Kind.INTEGER, 0, 100),
+    TIPS_ENABLED("orders.tips.enabled", Kind.BOOLEAN, 0, 0),
+    TIPS_MAX("orders.tips.max", Kind.DECIMAL, 0, 1_000_000_000);
 
-    public enum Kind { BOOLEAN, INTEGER, DECIMAL }
+    /** CHOICE: one of a fixed list of words (lowercase). */
+    public enum Kind { BOOLEAN, INTEGER, DECIMAL, CHOICE }
 
     private final String key;
     private final Kind kind;
     private final long min;
     private final long max;
+    private final List<String> choices;
 
     FeatureSetting(String key, Kind kind, long min, long max) {
         this.key = key;
         this.kind = kind;
         this.min = min;
         this.max = max;
+        this.choices = List.of();
+    }
+
+    FeatureSetting(String key, String... choices) {
+        this.key = key;
+        this.kind = Kind.CHOICE;
+        this.min = 0;
+        this.max = 0;
+        this.choices = List.of(choices);
     }
 
     /** The config.yml path, also the row key in public.feature_settings. */
@@ -53,7 +69,7 @@ public enum FeatureSetting {
         return key;
     }
 
-    /** The value as config.yml would hold it (Boolean, Integer or Double), or empty if invalid. */
+    /** The value as config.yml would hold it (Boolean, Integer, Double or String), or empty if invalid. */
     public Optional<Object> parse(@Nullable String raw) {
         if (raw == null) {
             return Optional.empty();
@@ -62,6 +78,7 @@ public enum FeatureSetting {
         try {
             return switch (kind) {
                 case BOOLEAN -> text.equals("true") || text.equals("false") ? Optional.of(Boolean.parseBoolean(text)) : Optional.empty();
+                case CHOICE -> choices.contains(text) ? Optional.of(text) : Optional.empty();
                 case INTEGER -> {
                     int value = Integer.parseInt(text);
                     yield value >= min && value <= max ? Optional.of(value) : Optional.empty();
@@ -100,7 +117,12 @@ public enum FeatureSetting {
     /** {"path":value,...} in declaration order, for plugin_settings (the web shows what is in force). */
     public static String toJson(Map<FeatureSetting, Object> values) {
         return values.entrySet().stream()
-                .map(entry -> "\"" + entry.getKey().key + "\":" + entry.getValue())
+                .map(entry -> "\"" + entry.getKey().key + "\":" + jsonValue(entry.getValue()))
                 .collect(Collectors.joining(",", "{", "}"));
+    }
+
+    /** Numbers and booleans as they are; choices are plain lowercase words, so quoting is enough. */
+    private static String jsonValue(Object value) {
+        return value instanceof String text ? "\"" + text + "\"" : String.valueOf(value);
     }
 }

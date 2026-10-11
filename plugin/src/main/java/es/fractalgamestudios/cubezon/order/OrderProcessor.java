@@ -69,6 +69,15 @@ public final class OrderProcessor {
     }
 
     /** How long a new order waits before it is processed (config.yml orders.automatic; /cz reload applies it). */
+    /** The biggest tip an order may carry: orders.tips.max, or 0 with tips off (orders.tips.enabled). */
+    public static java.math.BigDecimal maxTip(org.bukkit.configuration.ConfigurationSection config) {
+        if (!config.getBoolean("orders.tips.enabled", true)) {
+            return java.math.BigDecimal.ZERO;
+        }
+        return java.math.BigDecimal.valueOf(Math.max(0, config.getDouble("orders.tips.max", 1000)))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
     public OrderDelay delay() {
         return OrderDelay.fromConfig(plugin.getConfig());
     }
@@ -92,7 +101,7 @@ public final class OrderProcessor {
         execute(() -> {
             ClaimResult result;
             try {
-                result = orders.claimNext(OrderProcessor::isValidItem, delay());
+                result = orders.claimNext(OrderProcessor::isValidItem, delay(), maxTip(plugin.getConfig()));
             } catch (SQLException | RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "Could not claim the next order", e);
                 running.set(false);

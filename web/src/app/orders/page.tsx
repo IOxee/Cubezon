@@ -169,7 +169,7 @@ function OrderRow({ order, mode }: { order: OrderSummary; mode: OrdersMode }) {
         </p>
       </div>
       <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-        <Price amount={order.total + order.expressFee} size="lg" />
+        <Price amount={order.total + order.expressFee + order.tip} size="lg" />
         <OrderStatusStamp
           status={order.status}
           processing={isProcessing(order)}

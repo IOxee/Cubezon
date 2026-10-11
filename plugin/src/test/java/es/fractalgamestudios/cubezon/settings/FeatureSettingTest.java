@@ -57,6 +57,21 @@ class FeatureSettingTest {
     }
 
     @Test
+    void choicesOnlyTakeTheirOwnWords() {
+        assertEquals(Optional.of("shop-capped"), FeatureSetting.EXPRESS_PRICING.parse(" Shop-Capped "));
+        assertEquals(Optional.empty(), FeatureSetting.EXPRESS_PRICING.parse("free"));
+    }
+
+    @Test
+    void choicesArePublishedAsJsonStrings() {
+        Map<FeatureSetting, Object> values = new EnumMap<>(FeatureSetting.class);
+        values.put(FeatureSetting.EXPRESS_PRICING, "shop");
+        values.put(FeatureSetting.TIPS_ENABLED, true);
+
+        assertEquals("{\"mailbox.express.pricing\":\"shop\",\"orders.tips.enabled\":true}", FeatureSetting.toJson(values));
+    }
+
+    @Test
     void publishedJsonListsEveryEffectiveValue() {
         Map<FeatureSetting, Object> values = new EnumMap<>(FeatureSetting.class);
         values.put(FeatureSetting.EXPRESS_ENABLED, false);

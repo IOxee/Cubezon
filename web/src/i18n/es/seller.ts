@@ -174,6 +174,21 @@ export const seller = {
     saved: "Perfil guardado.",
   },
 
+  /** The shop's own express fee (/panel/<slug>/shop), when the server lets shops set it. */
+  expressFee: {
+    title: "Precio del envío exprés",
+    lead: "Lo que paga quien elige recibir tu pedido en su buzón: una vez por compra en tu tienda.",
+    serverFee: "Precio del servidor",
+    cap: "Máximo permitido",
+    current: "Ahora cobras",
+    field: "Tu precio",
+    placeholder: "Vacío = {fee}",
+    hint: "Déjalo vacío para usar el precio del servidor. 0 = envío gratis.",
+    save: "Guardar precio",
+    saving: "Guardando…",
+    saved: "Precio del envío guardado.",
+  },
+
   /** Logo and banner uploads of the public profile. */
   images: {
     title: "Imágenes",
@@ -439,6 +454,8 @@ export const seller = {
       status: "Estado",
     },
     mailbox: "Buzón (exprés)",
+    expressExtra: "+{amount} exprés",
+    tipExtra: "+{amount} propina",
     items: { one: "{count} objeto", other: "{count} objetos" },
     count: { zero: "Sin pedidos", one: "{count} pedido", other: "{count} pedidos" },
     unknownBuyer: "Jugador desconocido",
@@ -476,6 +493,9 @@ export const seller = {
     statusInvalid: "Elige si el producto está activo o pausado.",
     taglineLength: "El lema no puede pasar de 80 caracteres.",
     featuredTooMany: "Puedes destacar como mucho 4 productos.",
+    expressFeeFormat: "Escribe el precio con hasta 2 decimales, por ejemplo 12,50. Vacío = el del servidor.",
+    expressFeeRange: "El envío exprés no puede pasar de {max}.",
+    expressFeeLocked: "Ahora el servidor pone el mismo precio de envío exprés a todas las tiendas: no puedes cambiarlo.",
     imageMissing: "Elige una imagen.",
     imageType: "La imagen debe ser PNG, JPG o WebP.",
     imageSize: "La imagen no puede pasar de 2 MB.",

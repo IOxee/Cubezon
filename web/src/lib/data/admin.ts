@@ -419,6 +419,8 @@ export type AdminOrderDetail = {
   delivery: DeliveryMethod;
   mailbox: { world: string; x: number; y: number; z: number } | null;
   expressFee: number;
+  /** Tip the buyer added (charged apart from total, paid to whoever delivers it). */
+  tip: number;
   events: OrderEvent[];
 };
 
@@ -428,7 +430,7 @@ export async function getOrderDetail(id: string): Promise<AdminOrderDetail | nul
     db
       .from("orders")
       .select(
-        "id, status, processing_started_at, quantity, unit_price, total, failure_reason, created_at, updated_at, paid_at, ready_at, collected_at, buyer_uuid, buyer:players(name), shop:shops(id, name, slug, ink, official, status), listing:listings(id, title, material, unit_amount, status), locker:lockers(id, name, world, x, y, z, active), delivery_method, express_fee, mailbox:mailboxes(world, x, y, z)",
+        "id, status, processing_started_at, quantity, unit_price, total, failure_reason, created_at, updated_at, paid_at, ready_at, collected_at, buyer_uuid, buyer:players(name), shop:shops(id, name, slug, ink, official, status), listing:listings(id, title, material, unit_amount, status), locker:lockers(id, name, world, x, y, z, active), delivery_method, express_fee, tip, mailbox:mailboxes(world, x, y, z)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -472,6 +474,7 @@ export async function getOrderDetail(id: string): Promise<AdminOrderDetail | nul
     delivery: parseDeliveryMethod(row.delivery_method),
     mailbox: row.mailbox,
     expressFee: Number(row.express_fee),
+    tip: Number(row.tip),
     events: (events.data ?? []).map((event) => ({
       id: event.id,
       fromStatus: event.from_status,
@@ -594,26 +597,36 @@ export async function addStaff(grantedBy: Player, playerUuid: string, role: Staf
   return true;
 }
 
-/** Returns the member's name, or null if they are no longer staff. */
-export async function setStaffRole(playerUuid: string, role: StaffRole): Promise<string | null> {
+/**
+ * Result of changing or removing a member. "lastSuperadmin": the trigger staff_keep_superadmin
+ * refused it, because the staff would be left without any superadmin.
+ */
+export type StaffChange = { status: "done"; name: string } | { status: "gone" } | { status: "lastSuperadmin" };
+
+function isLastSuperadmin(error: { message?: string } | null): boolean {
+  return Boolean(error?.message?.includes("LAST_SUPERADMIN"));
+}
+
+export async function setStaffRole(playerUuid: string, role: StaffRole): Promise<StaffChange> {
   const { data, error } = await adminDb()
     .from("staff")
     .update({ role })
     .eq("player_uuid", playerUuid)
     .select("player:players!staff_player_uuid_fkey(name)")
     .maybeSingle();
+  if (isLastSuperadmin(error)) return { status: "lastSuperadmin" };
   if (error) throw dbError(error);
-  return data ? (data.player?.name ?? "") : null;
+  return data ? { status: "done", name: data.player?.name ?? "" } : { status: "gone" };
 }
 
-/** Returns the removed member's name, or null if they were not staff. */
-export async function removeStaff(playerUuid: string): Promise<string | null> {
+export async function removeStaff(playerUuid: string): Promise<StaffChange> {
   const { data, error } = await adminDb()
     .from("staff")
     .delete()
     .eq("player_uuid", playerUuid)
     .select("player:players!staff_player_uuid_fkey(name)")
     .maybeSingle();
+  if (isLastSuperadmin(error)) return { status: "lastSuperadmin" };
   if (error) throw dbError(error);
-  return data ? (data.player?.name ?? "") : null;
+  return data ? { status: "done", name: data.player?.name ?? "" } : { status: "gone" };
 }

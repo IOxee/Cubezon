@@ -71,6 +71,17 @@ public final class MailboxController {
         return plugin.getConfig().getBoolean("mailbox.express.fee-to-seller", false);
     }
 
+    /** Who sets the express fee (mailbox.express.pricing). */
+    public ExpressPricing expressPricing() {
+        return ExpressPricing.parse(plugin.getConfig().getString("mailbox.express.pricing", "server"));
+    }
+
+    /** Highest fee a shop may set with pricing shop-capped (mailbox.express.max-fee). */
+    public BigDecimal expressMaxFee() {
+        return BigDecimal.valueOf(Math.max(0, plugin.getConfig().getDouble("mailbox.express.max-fee", 500))).setScale(2,
+                java.math.RoundingMode.HALF_UP);
+    }
+
     /** Right click on a mailbox with an express package in hand delivers it. False when the item is not a package. */
     public boolean deliverPackage(org.bukkit.entity.Player player, Mailbox mailbox, org.bukkit.inventory.ItemStack item) {
         var roleplay = plugin.roleplayController();
@@ -99,11 +110,20 @@ public final class MailboxController {
         }
         boolean enabled = expressEnabled();
         String fee = expressFee().toPlainString();
+        String pricing = expressPricing().key();
+        String maxFee = expressMaxFee().toPlainString();
         int max = maxPerPlayer();
+        boolean tipsEnabled = plugin.getConfig().getBoolean("orders.tips.enabled", true);
+        String tipsMax = BigDecimal.valueOf(Math.max(0, plugin.getConfig().getDouble("orders.tips.max", 1000)))
+                .setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
         plugin.dbExecutor().execute(() -> {
             try {
                 roleplay.publishSetting("express_enabled", String.valueOf(enabled));
                 roleplay.publishSetting("express_fee", fee);
+                roleplay.publishSetting("express_pricing", pricing);
+                roleplay.publishSetting("express_max_fee", maxFee);
+                roleplay.publishSetting("tips_enabled", String.valueOf(tipsEnabled));
+                roleplay.publishSetting("tips_max", tipsMax);
                 roleplay.publishSetting("max_mailboxes", String.valueOf(max));
             } catch (SQLException e) {
                 plugin.getLogger().log(Level.WARNING, "Could not publish the mailbox settings", e);

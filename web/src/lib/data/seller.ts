@@ -53,6 +53,8 @@ export type SellerShop = {
   featuredListingIds: string[];
   /** Whether the storefront shows the zone (only if there is one). */
   showLocation: boolean;
+  /** Its own express fee (shops.express_fee), used only when the server lets shops set it; null = the server's. */
+  expressFee: number | null;
 };
 
 export type Inventory = { available: number; reserved: number; delivered: number; returned: number };
@@ -85,6 +87,9 @@ export type SellerOrder = {
   sellerPaidAt: string | null;
   quantity: number;
   total: number;
+  /** Charged apart from `total`: express fee and the buyer's tip (0 = none). */
+  expressFee: number;
+  tip: number;
   buyerName: string | null;
   listing: { id: string; title: string; material: string; unitAmount: number } | null;
   lockerName: string | null;
@@ -98,7 +103,7 @@ const EMPTY_INVENTORY: Inventory = { available: 0, reserved: 0, delivered: 0, re
 // Shops
 
 const SHOP_COLUMNS =
-  "id, owner_uuid, name, slug, description, ink, status, official, review_note, zone_world, zone_min_x, zone_min_y, zone_min_z, zone_max_x, zone_max_y, zone_max_z, tagline, logo_path, banner_path, featured_listing_ids, show_location";
+  "id, owner_uuid, name, slug, description, ink, status, official, review_note, zone_world, zone_min_x, zone_min_y, zone_min_z, zone_max_x, zone_max_y, zone_max_z, tagline, logo_path, banner_path, featured_listing_ids, show_location, express_fee";
 
 type ShopRow = {
   id: string;
@@ -122,6 +127,7 @@ type ShopRow = {
   banner_path: string | null;
   featured_listing_ids: string[];
   show_location: boolean;
+  express_fee: number | null;
 };
 
 function toShop(row: ShopRow): SellerShop {
@@ -141,6 +147,7 @@ function toShop(row: ShopRow): SellerShop {
     bannerPath: row.banner_path,
     featuredListingIds: row.featured_listing_ids,
     showLocation: row.show_location,
+    expressFee: row.express_fee === null ? null : Number(row.express_fee),
   };
 }
 
@@ -679,7 +686,7 @@ export async function getShopOrders(
   let query = adminDb()
     .from("orders")
     .select(
-      "id, created_at, status, processing_started_at, failure_reason, delivery_method, seller_paid_at, quantity, total, buyer:players(name), listing:listings(id, title, material, unit_amount), locker:lockers(name)",
+      "id, created_at, status, processing_started_at, failure_reason, delivery_method, seller_paid_at, quantity, total, express_fee, tip, buyer:players(name), listing:listings(id, title, material, unit_amount), locker:lockers(name)",
       { count: "exact" },
     )
     .eq("shop_id", shopId);
@@ -702,6 +709,8 @@ export async function getShopOrders(
     sellerPaidAt: row.seller_paid_at,
     quantity: row.quantity,
     total: Number(row.total),
+    expressFee: Number(row.express_fee),
+    tip: Number(row.tip),
     buyerName: row.buyer?.name ?? null,
     listing: row.listing
       ? {

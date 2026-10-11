@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 import type { ActionState } from "@/components/admin/action-form";
 import { fmt, m } from "@/i18n";
 import { requireStaff } from "@/lib/auth/session";
@@ -46,31 +47,39 @@ export async function addStaffAction(_state: ActionState, formData: FormData): P
   return { status: "ok", message: fmt(t.done.added, { name: player.name, role: m.status.staff[role] }) };
 }
 
-/** Changes another member's role. Nobody can change their own. Superadmin only. */
+/**
+ * Changes a member's role, the superadmin's own included. The database never lets the staff end
+ * without a superadmin. Whoever steps down to admin leaves this page (it is superadmin only).
+ */
 export async function setStaffRoleAction(_state: ActionState, formData: FormData): Promise<ActionState> {
   const me = await requireStaff("SUPERADMIN");
 
   const playerUuid = formData.get("playerUuid");
   const role = formData.get("role");
   if (!isUuid(playerUuid) || !isStaffRole(role)) return fail(t.errors.invalid);
-  if (isSelf(playerUuid, me)) return fail(t.errors.self);
 
-  const name = await setStaffRole(playerUuid, role);
+  const result = await setStaffRole(playerUuid, role);
   refresh();
-  if (name === null) return fail(t.errors.gone);
-  return { status: "ok", message: fmt(t.done.role, { name, role: m.status.staff[role] }) };
+  if (result.status === "lastSuperadmin") return fail(t.errors.lastSuperadmin);
+  if (result.status === "gone") return fail(t.errors.gone);
+  if (isSelf(playerUuid, me) && role !== "SUPERADMIN") redirect("/admin");
+  return { status: "ok", message: fmt(t.done.role, { name: result.name, role: m.status.staff[role] }) };
 }
 
-/** Removes another member from the staff. Nobody can remove themselves. Superadmin only. */
+/**
+ * Removes a member from the staff, the superadmin themselves included (they lose access to the
+ * administration). The database never lets the staff end without a superadmin.
+ */
 export async function removeStaffAction(_state: ActionState, formData: FormData): Promise<ActionState> {
   const me = await requireStaff("SUPERADMIN");
 
   const playerUuid = formData.get("playerUuid");
   if (!isUuid(playerUuid)) return fail(t.errors.invalid);
-  if (isSelf(playerUuid, me)) return fail(t.errors.self);
 
-  const name = await removeStaff(playerUuid);
+  const result = await removeStaff(playerUuid);
   refresh();
-  if (name === null) return fail(t.errors.gone);
-  return { status: "ok", message: fmt(t.done.removed, { name }) };
+  if (result.status === "lastSuperadmin") return fail(t.errors.lastSuperadmin);
+  if (result.status === "gone") return fail(t.errors.gone);
+  if (isSelf(playerUuid, me)) redirect("/");
+  return { status: "ok", message: fmt(t.done.removed, { name: result.name }) };
 }

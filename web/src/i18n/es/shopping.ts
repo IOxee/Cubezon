@@ -78,10 +78,19 @@ export const shopping = {
     deliveryExpressFee: "+{fee}",
     deliveryExpressHint: "Llega solo a tu buzón en cuanto se procesa el pedido, sin pasar por la taquilla.",
     deliveryExpressOnce: "La tarifa se cobra una vez por compra, aunque se creen varios pedidos.",
+    deliveryExpressOncePerShop: "Cada tienda pone su tarifa y la cobra una vez por compra, aunque se creen varios pedidos.",
     noMailbox: "Coloca un buzón en el juego para usarlo ({command}).",
     mailboxTitle: "Tu buzón",
     expressFee: "Envío exprés",
+    expressFeeShop: "Envío exprés · {shop}",
     totalWithExpress: "Total a cobrar",
+    tipTitle: "Propina para quien te lo entregue",
+    tipHelp:
+      "Opcional, hasta {max} por tienda. Se cobra con el pedido y se la lleva quien lo entrega (o la tienda, si nadie lo reparte).",
+    tipPlaceholder: "0,00",
+    tipInvalid: "Escribe una cantidad de 0 a {max}, con 2 decimales como mucho.",
+    tipRow: "Propina",
+    tipNote: "Más {tip} de propina, que se cobra con el pedido.",
     paymentExpress:
       "Al confirmar, el servidor cobrará {total} más {fee} del envío exprés de tu saldo en el juego cuando procese el pedido. Si no te llega, el pedido falla sin coste.",
     noLockers:
@@ -119,6 +128,8 @@ export const shopping = {
       mailbox: "Ese buzón ya no existe. Coloca uno en el juego o recoge el pedido en una taquilla.",
       expressOff: "El envío exprés ya no está disponible. Elige una taquilla.",
       expressFee: "La tarifa del envío exprés ha cambiado. Revisa el total y vuelve a confirmar.",
+      tip: "Revisa la propina: de 0 a {max} por tienda, con 2 decimales como mucho.",
+      tipsOff: "Las propinas ya no están disponibles. Revisa el pedido y vuelve a confirmar.",
       review: "Algo ha cambiado desde que abriste la caja. Revisa el pedido actualizado y vuelve a confirmar.",
       failed: "No se ha podido crear el pedido y no se te ha cobrado nada. Vuelve a intentarlo en un momento.",
     },

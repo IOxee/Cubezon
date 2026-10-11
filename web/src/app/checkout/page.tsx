@@ -14,9 +14,10 @@ import {
   type CheckoutProblem,
 } from "@/lib/cart";
 import { getActiveLockersFresh, isUuid } from "@/lib/data/catalog";
-import { getExpressSettings, getMyMailboxes } from "@/lib/data/delivery";
+import { getExpressSettings, getMyMailboxes, getShopExpressFees, getTipSettings } from "@/lib/data/delivery";
 import { getCheckoutListings } from "@/lib/data/orders";
 import { getOrdersMode } from "@/lib/data/roleplay";
+import { expressFeesByLine, shopsSetExpressFee } from "@/lib/delivery";
 import { allowSelfPurchase } from "@/lib/dev-flags";
 import { centsToDecimal, formatAmount, formatMoney, fromCents, toCents } from "@/lib/format";
 import { checkoutProblemText } from "@/components/shopping/checkout-problem";
@@ -26,6 +27,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { Price } from "@/components/ui/price";
 import { CheckoutForm } from "./_components/checkout-form";
+import { ReceiptTip, ReceiptTipNote, ReceiptTotal } from "./_components/checkout-tips";
 
 export const metadata: Metadata = { title: m.shopping.checkout.metaTitle };
 
@@ -79,12 +81,13 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/checkout">
     );
   }
 
-  const [{ items, listings }, lockers, mode, express, mailboxes] = await Promise.all([
+  const [{ items, listings }, lockers, mode, express, mailboxes, tips] = await Promise.all([
     getCheckoutListings(requested.map((line) => line.listingId)),
     getActiveLockersFresh(),
     getOrdersMode(),
     getExpressSettings(),
     getMyMailboxes(player.uuid),
+    getTipSettings(),
   ]);
 
   // Same checks as placeOrder, against the price shown now.
@@ -145,8 +148,26 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/checkout">
     </section>
   );
 
-  // The express fee is charged once per purchase (lib/delivery: expressFeeByLine).
-  const feeCents = express.enabled ? express.feeCents : 0;
+  // Express: once per purchase, or once per shop when shops set their fee (lib/delivery).
+  const shops = uniqueShops(okLines.flatMap((row) => (row.item ? [row.item.shop] : [])));
+  const perShop = express.enabled && shopsSetExpressFee(express);
+  const shopFees = perShop ? await getShopExpressFees(shops.map((shop) => shop.id)) : new Map<string, number | null>();
+  const chargeLines = okLines.map((row) => ({ shopId: row.item?.shop.id ?? "", totalCents: row.totalCents }));
+  const lineFees = express.enabled ? expressFeesByLine(chargeLines, express, shopFees) : chargeLines.map(() => 0);
+  const feeCents = lineFees.reduce((sum, fee) => sum + fee, 0);
+  const shopFeeCents = (shopId: string) =>
+    lineFees.reduce((sum, fee, index) => sum + (chargeLines[index].shopId === shopId ? fee : 0), 0);
+  const expressRows = perShop ? (
+    shops.map((shop) => (
+      <TicketRow
+        key={shop.id}
+        label={fmt(t.expressFeeShop, { shop: shop.name })}
+        value={formatAmount(fromCents(shopFeeCents(shop.id)))}
+      />
+    ))
+  ) : (
+    <TicketRow label={t.expressFee} value={formatAmount(fromCents(feeCents))} />
+  );
   const receipt = (withExpress: boolean) => (
     <Ticket label={t.ticketHeader}>
       <TicketHeader title={m.meta.siteName} subtitle={t.ticketHeader} />
@@ -163,13 +184,10 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/checkout">
           value={formatAmount(fromCents(row.totalCents))}
         />
       ))}
-      {withExpress ? <TicketRow label={t.expressFee} value={formatAmount(fromCents(feeCents))} /> : null}
+      {withExpress ? expressRows : null}
+      <ReceiptTip label={t.tipRow} />
       <TicketRule />
-      <TicketRow
-        label={withExpress ? t.totalWithExpress : t.total}
-        value={<Price amount={fromCents(totalCents + (withExpress ? feeCents : 0))} size="md" />}
-        strong
-      />
+      <ReceiptTotal label={withExpress ? t.totalWithExpress : t.total} baseCents={totalCents + (withExpress ? feeCents : 0)} />
       <p className="text-xs text-ink-2">{plural(okLines.length, t.orderCount)}</p>
       <TicketRule />
       <p className="text-xs text-ink-2">
@@ -180,6 +198,7 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/checkout">
             })
           : fmt(mode === "roleplay" ? m.roleplay.checkout.payment : t.payment, { total: formatMoney(fromCents(totalCents)) })}
       </p>
+      <ReceiptTipNote template={t.tipNote} />
     </Ticket>
   );
 
@@ -201,9 +220,11 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/checkout">
         lockers={lockers}
         express={
           express.enabled
-            ? { fee: centsToDecimal(feeCents), feeLabel: formatMoney(fromCents(feeCents)), mailboxes }
+            ? { total: centsToDecimal(feeCents), totalLabel: formatMoney(fromCents(feeCents)), perShop, mailboxes }
             : null
         }
+        shops={shops.map((shop) => ({ id: shop.id, name: shop.name }))}
+        tips={tips.enabled ? tips : null}
         canConfirm={check.ok}
         items={itemsList}
         summary={receipt(false)}
@@ -218,6 +239,11 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/checkout">
       ) : null}
     </>
   );
+}
+
+/** Each shop once, in the order its first line appears. */
+function uniqueShops<S extends { id: string }>(shops: S[]): S[] {
+  return shops.filter((shop, index) => shops.findIndex((other) => other.id === shop.id) === index);
 }
 
 function CheckoutSkeleton() {

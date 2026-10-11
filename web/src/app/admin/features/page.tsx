@@ -56,7 +56,24 @@ async function Features() {
 
 function shown(def: FeatureDef, value: FeatureValue): string {
   if (typeof value === "boolean") return value ? t.yes : t.no;
+  if (typeof value === "string") return choiceLabel(value);
   return def.kind === "decimal" ? formatAmount(value) : String(value);
+}
+
+function choiceLabel(value: string): string {
+  return value in t.choices ? t.choices[value as keyof typeof t.choices] : value;
+}
+
+/** The radio options of a boolean or choice field: the default (config.yml) first. */
+function radioOptions(def: FeatureDef, defaultLabel: string): (readonly [string, string])[] {
+  const values: (readonly [string, string])[] =
+    def.kind === "boolean"
+      ? [
+          ["true", t.on],
+          ["false", t.off],
+        ]
+      : (def.choices ?? []).map((choice) => [choice, choiceLabel(choice)] as const);
+  return [["", defaultLabel], ...values];
 }
 
 /**
@@ -91,24 +108,20 @@ function Field({ def, panel }: { def: FeatureDef; panel: FeaturePanel }) {
           ) : null}
         </div>
       </div>
-      {def.kind === "boolean" ? (
+      {def.kind === "boolean" || def.kind === "choice" ? (
         <div
           key={`${def.key}:${stored ?? ""}`}
           role="radiogroup"
           aria-labelledby={`${id}-label`}
           aria-describedby={`${id}-hint`}
-          className="grid grid-cols-3 border-2 border-edge bg-surface text-sm"
+          className={`grid border-2 border-edge bg-surface text-sm ${def.kind === "boolean" ? "grid-cols-3" : "grid-cols-1"}`}
         >
-          {(
-            [
-              ["", defaultLabel],
-              ["true", t.on],
-              ["false", t.off],
-            ] as const
-          ).map(([value, label]) => (
+          {radioOptions(def, defaultLabel).map(([value, label]) => (
             <label
               key={value}
-              className="flex cursor-pointer items-center justify-center px-2 py-1.5 text-center leading-tight font-semibold not-first:border-l-2 not-first:border-edge has-checked:bg-ink has-checked:text-paper has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
+              className={`flex cursor-pointer items-center justify-center px-2 py-1.5 text-center leading-tight font-semibold has-checked:bg-ink has-checked:text-paper has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent ${
+                def.kind === "boolean" ? "not-first:border-l-2 not-first:border-edge" : "not-first:border-t-2 not-first:border-edge"
+              }`}
             >
               <input type="radio" name={def.key} value={value} defaultChecked={(stored ?? "") === value} className="sr-only" />
               {label}

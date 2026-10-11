@@ -22,7 +22,7 @@ public final class ShopPanelRepository {
 
     public record ShopInfo(UUID id, String name, String slug, String status, UUID ownerId, String ownerName,
                            boolean hasZone, int storageBlocks, int usedUnits, int capacityUnits, int members,
-                           CourierCommission commission) {
+                           CourierCommission commission, @Nullable BigDecimal expressFee) {
     }
 
     public record Member(UUID id, String name, @Nullable UUID roleId, @Nullable String roleName) {
@@ -44,7 +44,7 @@ public final class ShopPanelRepository {
                    s.zone_world is not null as has_zone,
                    st.storage_blocks, st.used_units, st.capacity_units,
                    (select count(*) from public.shop_members m where m.shop_id = s.id) as members,
-                   s.courier_commission_mode, s.courier_commission_value
+                   s.courier_commission_mode, s.courier_commission_value, s.express_fee
             from public.shops s
             join public.players p on p.uuid = s.owner_uuid
             join public.shop_storage st on st.shop_id = s.id
@@ -60,6 +60,12 @@ public final class ShopPanelRepository {
             """;
 
     private static final String IS_OWNER = "select owner_uuid = ? from public.shops where id = ?";
+
+    /** Only the owner (or an admin) sets the shop's express fee; null goes back to the server's. */
+    private static final String SET_EXPRESS_FEE = """
+            update public.shops set express_fee = ?
+            where id = ? and (owner_uuid = ? or ?)
+            """;
 
     /** Only the owner (or an admin) decides what couriers earn. */
     private static final String SET_COURIER_COMMISSION = """
@@ -164,8 +170,21 @@ public final class ShopPanelRepository {
                         row.getString("owner_name"), row.getBoolean("has_zone"), row.getInt("storage_blocks"),
                         row.getInt("used_units"), row.getInt("capacity_units"), row.getInt("members"),
                         CourierCommission.of(row.getString("courier_commission_mode"),
-                                row.getBigDecimal("courier_commission_value"))));
+                                row.getBigDecimal("courier_commission_value")),
+                        row.getBigDecimal("express_fee")));
             }
+        }
+    }
+
+    /** False when the requester is not the owner (nor an admin) or the shop is gone. The caller checks the cap. */
+    public boolean setExpressFee(UUID shopId, UUID requesterId, boolean admin, @Nullable BigDecimal fee) throws SQLException {
+        try (Connection connection = database.connection();
+             PreparedStatement statement = connection.prepareStatement(SET_EXPRESS_FEE)) {
+            statement.setBigDecimal(1, fee);
+            statement.setObject(2, shopId);
+            statement.setObject(3, requesterId);
+            statement.setBoolean(4, admin);
+            return statement.executeUpdate() > 0;
         }
     }
 

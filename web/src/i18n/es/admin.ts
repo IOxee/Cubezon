@@ -269,6 +269,7 @@ export const admin = {
     mailbox: "Envío exprés al buzón del comprador",
     mailboxGone: "El buzón ya no existe.",
     expressFee: "Envío exprés",
+    tip: "Propina",
     charged: "Cobrado al comprador",
     viewListing: "Ver producto",
     viewShop: "Ver escaparate",
@@ -347,11 +348,9 @@ export const admin = {
       actions: "Acciones",
     },
     you: "Tú",
-    selfHint: "No puedes quitarte ni cambiar tu propio rol.",
-    makeRole: {
-      ADMIN: "Pasar a admin",
-      SUPERADMIN: "Pasar a superadmin",
-    },
+    roleGroup: "Rol de {name}",
+    demoteSelfConfirm: "¿Pasarte a admin? Dejarás de ver el equipo, los jugadores, los temas y las funciones.",
+    removeSelfConfirm: "¿Salir del equipo? Perderás el acceso a la administración.",
     remove: "Quitar",
     removeConfirm: "¿Quitar a {name} del equipo? Perderá el acceso a la administración.",
     saving: "Guardando…",
@@ -374,8 +373,9 @@ export const admin = {
       notFound:
         "No hay ningún jugador llamado «{name}». Tiene que entrar al servidor al menos una vez antes de poder añadirlo.",
       exists: "{name} ya está en el equipo.",
-      self: "No puedes quitarte ni cambiar tu propio rol.",
+      self: "Ya estás en el equipo.",
       gone: "Ese jugador ya no está en el equipo.",
+      lastSuperadmin: "Tiene que quedar al menos un superadmin: nombra antes a otro.",
     },
   },
 
@@ -480,6 +480,12 @@ export const admin = {
       express: "Envío exprés al buzón",
       orders: "Pedidos",
     },
+    /** Words of the `choice` options. */
+    choices: {
+      server: "Mismo precio para todos",
+      shop: "Cada tienda pone el suyo",
+      "shop-capped": "Cada tienda, con tope",
+    },
     options: {
       "storage.buy.enabled": { label: "Comprar almacenes", hint: "Con dinero del juego, por comando, ordenador o Tienda Cubezon." },
       "computer.buy.enabled": { label: "Comprar ordenadores de empresa", hint: "El ordenador completo de cada tienda." },
@@ -491,11 +497,18 @@ export const admin = {
       "mailbox.max-per-player": { label: "Buzones por jugador", hint: "De 0 a 20." },
       "mailbox.express.enabled": { label: "Envío exprés", hint: "Que los compradores puedan recibir en su buzón." },
       "mailbox.express.fee": { label: "Suplemento exprés", hint: "Lo paga el comprador por cada compra exprés." },
+      "mailbox.express.pricing": {
+        label: "Quién pone el precio del exprés",
+        hint: "Con precio por tienda, cada una lo cambia en su panel y lo cobra una vez por compra.",
+      },
+      "mailbox.express.max-fee": { label: "Tope del exprés por tienda", hint: "Lo máximo que puede cobrar una tienda con tope." },
       "mailbox.express.fee-to-seller": { label: "El suplemento es para el vendedor", hint: "Si no, se lo queda el servidor." },
       "mailbox.express.hand-delivery": { label: "Exprés entregado a mano (roleplay)", hint: "Un empleado lleva el paquete al buzón del comprador." },
       "orders.automatic.delay-min-minutes": { label: "Retraso mínimo (automático)", hint: "Minutos antes de procesar un pedido, de 0 a 1440." },
       "orders.automatic.delay-max-minutes": { label: "Retraso máximo (automático)", hint: "Minutos, de 0 a 1440. 0 y 0 = al momento." },
       "orders.roleplay.courier-max-percent": { label: "Comisión máxima del repartidor", hint: "Porcentaje de la mercancía, de 0 a 100." },
+      "orders.tips.enabled": { label: "Propinas", hint: "Que el comprador pueda dejar propina para quien le entrega el pedido." },
+      "orders.tips.max": { label: "Propina máxima", hint: "Dinero del juego por pedido." },
     },
     errors: {
       invalid: "Revisa estos campos: {fields}.",

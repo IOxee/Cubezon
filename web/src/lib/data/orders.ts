@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Player } from "@/lib/auth/session";
 import type { CheckoutListing, PricedLine } from "@/lib/cart";
-import { expressFeeByLine, parseDeliveryMethod, type DeliveryMethod } from "@/lib/delivery";
+import { parseDeliveryMethod, type DeliveryMethod } from "@/lib/delivery";
 import { centsToDecimal } from "@/lib/format";
 import { getCatalogItemsFresh, type CatalogItem } from "@/lib/data/catalog";
 import { adminDb, dbError, publicDb } from "@/lib/supabase/server";
@@ -48,6 +48,8 @@ export type OrderSummary = {
   mailbox: { world: string; x: number; y: number; z: number } | null;
   /** Express fee, charged apart from `total` (0 for locker orders and other lines of a purchase). */
   expressFee: number;
+  /** Tip the buyer added, charged apart from `total` and paid to whoever delivers it (0 = none). */
+  tip: number;
 };
 
 export type OrderEvent = { status: OrderStatus; at: string; note: string | null };
@@ -61,7 +63,7 @@ export type OrderDetail = OrderSummary & {
 };
 
 const SUMMARY_COLUMNS =
-  "id, status, processing_started_at, failure_reason, quantity, unit_price, total, created_at, delivery_method, express_fee, listing:listings(id, title, material, unit_amount), shop:shops(id, name, slug, ink, official), locker:lockers(id, name, world, x, y, z, active), mailbox:mailboxes(world, x, y, z)";
+  "id, status, processing_started_at, failure_reason, quantity, unit_price, total, created_at, delivery_method, express_fee, tip, listing:listings(id, title, material, unit_amount), shop:shops(id, name, slug, ink, official), locker:lockers(id, name, world, x, y, z, active), mailbox:mailboxes(world, x, y, z)";
 
 type SummaryRow = {
   id: string;
@@ -74,6 +76,7 @@ type SummaryRow = {
   created_at: string;
   delivery_method: string;
   express_fee: number;
+  tip: number;
   listing: { id: string; title: string; material: string; unit_amount: number };
   shop: { id: string; name: string; slug: string; ink: string; official: boolean };
   locker: { id: string; name: string; world: string; x: number; y: number; z: number; active: boolean } | null;
@@ -101,6 +104,7 @@ function toSummary(row: SummaryRow): OrderSummary {
     locker: row.locker,
     mailbox: row.mailbox,
     expressFee: Number(row.express_fee),
+    tip: Number(row.tip),
   };
 }
 
@@ -240,23 +244,29 @@ export async function isActiveLocker(lockerId: string): Promise<boolean> {
   return data !== null;
 }
 
-/** Where the orders of a checkout go: a locker, or the buyer's mailbox with the current express fee. */
-export type CheckoutDelivery =
-  | { method: "LOCKER"; lockerId: string }
-  | { method: "MAILBOX"; mailboxId: string; feeCents: number };
+/** Where the orders of a checkout go: a locker, or the buyer's mailbox (express). */
+export type CheckoutDelivery = { method: "LOCKER"; lockerId: string } | { method: "MAILBOX"; mailboxId: string };
+
+/** What each line pays on top of its total, in cents, in the same order as the lines. */
+export type LineCharges = { expressFeesCents: readonly number[]; tipsCents: readonly number[] };
 
 /**
  * Creates one PENDING order per line in a single insert (one statement, so all or nothing).
  * Lines come from priceCheckout: unit_price copied from the listing and total = unit_price *
- * quantity computed in cents, sent as exact decimal strings. Express: the fee (copied now, like
- * the price) goes once per purchase, on one line (expressFeeByLine); the database checks that the
- * mailbox is the buyer's.
+ * quantity computed in cents, sent as exact decimal strings. The express fee and the tip of each
+ * line (lib/delivery expressFeesByLine, lib/tips tipsByLine) are copied now, like the price; the
+ * database checks that the mailbox is the buyer's.
  */
-export async function createOrders(player: Player, delivery: CheckoutDelivery, lines: PricedLine[]): Promise<string[]> {
-  const fees =
-    delivery.method === "MAILBOX"
-      ? expressFeeByLine(lines.map((line) => line.totalCents), delivery.feeCents)
-      : lines.map(() => 0);
+export async function createOrders(
+  player: Player,
+  delivery: CheckoutDelivery,
+  lines: PricedLine[],
+  charges: LineCharges,
+): Promise<string[]> {
+  if (charges.expressFeesCents.length !== lines.length || charges.tipsCents.length !== lines.length) {
+    throw new Error("createOrders: one express fee and one tip per line");
+  }
+  const fees = delivery.method === "MAILBOX" ? charges.expressFeesCents : lines.map(() => 0);
   const rows = lines.map((line, index) => ({
     buyer_uuid: player.uuid,
     listing_id: line.listingId,
@@ -269,6 +279,7 @@ export async function createOrders(player: Player, delivery: CheckoutDelivery, l
     unit_price: line.unitPrice as unknown as number,
     total: line.total as unknown as number,
     express_fee: centsToDecimal(fees[index]) as unknown as number,
+    tip: centsToDecimal(charges.tipsCents[index]) as unknown as number,
     status: "PENDING",
   })) satisfies TablesInsert<"orders">[];
 

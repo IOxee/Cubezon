@@ -38,6 +38,12 @@ main:
   commission-button:
     slot: 18
     material: gold_ingot
+  express-fee-button:
+    slot: 20
+    material: feather
+  web-button:
+    slot: 24
+    material: filled_map
 
 # Courier commission (owner only, roleplay mode)
 commission:
