@@ -6,10 +6,74 @@ description: Marketplace web de objetos del juego con recogida en taquillas.
 depend: [Vault]
 # Item plugins Cubezon can recognise (optional): loaded first when present.
 softdepend: [ItemsAdder, MMOItems, CraftEngine, Nexo, Oraxen, Slimefun, EcoItems, CustomJukebox]
+# Every node can be granted or denied one by one from a permission plugin (LuckPerms...). The two parents grant their
+# children: giving cubezon.admin is enough, and denying a single child (value false) removes just that power.
 permissions:
   cubezon.use:
-    description: Usar /cubezon y vincular la cuenta.
+    description: Usar /cubezon y todas las funciones de jugador.
+    default: true
+    children:
+      cubezon.link: true
+      cubezon.deposit: true
+      cubezon.pickup: true
+      cubezon.buy.computer: true
+      cubezon.buy.mailbox: true
+      cubezon.buy.storage: true
+  cubezon.link:
+    description: Vincular la cuenta con la web (/cz link).
+    default: true
+  cubezon.deposit:
+    description: Depositar stock (/cz deposit).
+    default: true
+  cubezon.pickup:
+    description: Recoger pedidos en una taquilla (/cz pickup).
+    default: true
+  cubezon.buy.computer:
+    description: Comprar ordenadores de empresa.
+    default: true
+  cubezon.buy.mailbox:
+    description: Comprar buzones.
+    default: true
+  cubezon.buy.storage:
+    description: Comprar bloques de almacén.
     default: true
   cubezon.admin:
-    description: Administrar Cubezon (recargar, aprobar tiendas, taquillas).
+    description: Administrar Cubezon (todos los permisos de administración).
+    default: op
+    children:
+      cubezon.admin.give: true
+      cubezon.admin.storage-types: true
+      cubezon.admin.locker: true
+      cubezon.admin.shop: true
+      cubezon.admin.item: true
+      cubezon.admin.reload: true
+      cubezon.admin.panel: true
+      cubezon.admin.terminal: true
+      cubezon.admin.bypass: true
+  cubezon.admin.give:
+    description: Dar ordenadores, almacenes y buzones (/cz ... give).
+    default: op
+  cubezon.admin.storage-types:
+    description: Crear, borrar y listar tipos de almacén.
+    default: op
+  cubezon.admin.locker:
+    description: Crear, borrar y listar taquillas.
+    default: op
+  cubezon.admin.shop:
+    description: Marcar zonas de tienda y fijar cupos de tiendas.
+    default: op
+  cubezon.admin.item:
+    description: Registrar objetos en el catálogo de la web.
+    default: op
+  cubezon.admin.reload:
+    description: Recargar la configuración (/cz reload).
+    default: op
+  cubezon.admin.panel:
+    description: Abrir el panel de funciones del servidor.
+    default: op
+  cubezon.admin.terminal:
+    description: Colocar y romper terminales de la tienda Cubezon.
+    default: op
+  cubezon.admin.bypass:
+    description: Gestionar cualquier tienda como si fuera su dueño.
     default: op

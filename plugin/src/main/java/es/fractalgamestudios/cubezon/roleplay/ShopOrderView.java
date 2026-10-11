@@ -22,7 +22,8 @@ public record ShopOrderView(
         OffsetDateTime createdAt,
         @Nullable OffsetDateTime paidAt,
         String deliveryMethod,
-        @Nullable String mailboxPosition) {
+        @Nullable String mailboxPosition,
+        @Nullable UUID mailboxId) {
 
     /** Express order: delivered straight to the buyer's mailbox, no package. */
     public boolean toMailbox() {

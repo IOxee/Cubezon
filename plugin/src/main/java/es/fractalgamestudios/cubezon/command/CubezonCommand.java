@@ -40,12 +40,18 @@ public final class CubezonCommand {
 
     public void register(Commands commands) {
         var root = Commands.literal("cubezon")
-                .requires(source -> source.getSender().hasPermission("cubezon.use"))
+                .requires(source -> Perm.USE.has(source.getSender()))
                 .executes(this::help)
                 .then(Commands.literal("help").executes(this::help))
-                .then(Commands.literal("link").executes(this::link))
-                .then(Commands.literal("deposit").executes(this::deposit))
-                .then(Commands.literal("pickup").executes(this::pickup))
+                .then(Commands.literal("link")
+                        .requires(source -> Perm.LINK.has(source.getSender()))
+                        .executes(this::link))
+                .then(Commands.literal("deposit")
+                        .requires(source -> Perm.DEPOSIT.has(source.getSender()))
+                        .executes(this::deposit))
+                .then(Commands.literal("pickup")
+                        .requires(source -> Perm.PICKUP.has(source.getSender()))
+                        .executes(this::pickup))
                 .then(itemCommand("item", "info", "register"))
                 .then(mailboxCommand())
                 .then(computerCommand("computer", "buy", "give"))
@@ -54,8 +60,8 @@ public final class CubezonCommand {
                 .then(shopCommand("shop"))
                 .then(lockerCommand("locker", "create", "remove", "list"))
                 .then(Commands.literal("reload")
-                        .requires(source -> source.getSender().hasPermission("cubezon.admin"))
-                        .executes(this::reload));
+                        .requires(source -> Perm.ADMIN_RELOAD.has(source.getSender()))
+                        .executes(guard(Perm.ADMIN_RELOAD, this::reload)));
 
         commands.register(root.build(), "Cubezon marketplace", List.of("cz"));
     }
@@ -66,8 +72,8 @@ public final class CubezonCommand {
                 .then(Commands.literal(info)
                         .executes(context -> withPlayer(context, player -> plugin.itemController().info(player))))
                 .then(Commands.literal(register)
-                        .requires(source -> source.getSender().hasPermission("cubezon.admin"))
-                        .executes(context -> withPlayer(context, player -> plugin.itemController().register(player))));
+                        .requires(source -> Perm.ADMIN_ITEM.has(source.getSender()))
+                        .executes(guard(Perm.ADMIN_ITEM, context -> withPlayer(context, player -> plugin.itemController().register(player)))));
     }
 
     /** /cz mailbox: where your mailbox is; buy (any player) and give (admin). */
@@ -75,16 +81,17 @@ public final class CubezonCommand {
         return Commands.literal("mailbox")
                 .executes(context -> withPlayer(context, player -> plugin.mailboxController().info(player)))
                 .then(Commands.literal("buy")
+                        .requires(source -> Perm.BUY_MAILBOX.has(source.getSender()))
                         .executes(context -> withPlayer(context, player -> plugin.mailboxController().buy(player, 1)))
                         .then(Commands.argument("amount", IntegerArgumentType.integer(1, StorageController.MAX_AMOUNT))
                                 .executes(context -> withPlayer(context, player -> plugin.mailboxController()
                                         .buy(player, IntegerArgumentType.getInteger(context, "amount"))))))
                 .then(Commands.literal("give")
-                        .requires(source -> source.getSender().hasPermission("cubezon.admin"))
+                        .requires(source -> Perm.ADMIN_GIVE.has(source.getSender()))
                         .then(Commands.argument("player", ArgumentTypes.player())
-                                .executes(context -> giveMailbox(context, 1))
+                                .executes(guard(Perm.ADMIN_GIVE, context -> giveMailbox(context, 1)))
                                 .then(Commands.argument("amount", IntegerArgumentType.integer(1, StorageController.MAX_AMOUNT))
-                                        .executes(context -> giveMailbox(context, IntegerArgumentType.getInteger(context, "amount"))))));
+                                        .executes(guard(Perm.ADMIN_GIVE, context -> giveMailbox(context, IntegerArgumentType.getInteger(context, "amount")))))));
     }
 
     private int giveMailbox(CommandContext<CommandSourceStack> context, int amount) throws CommandSyntaxException {
@@ -98,17 +105,18 @@ public final class CubezonCommand {
     private LiteralArgumentBuilder<CommandSourceStack> computerCommand(String root, String buy, String give) {
         return Commands.literal(root)
                 .then(Commands.literal(buy)
+                        .requires(source -> Perm.BUY_COMPUTER.has(source.getSender()))
                         .executes(context -> withPlayer(context, player -> plugin.roleplayController().buy(player, 1)))
                         .then(Commands.argument("amount", IntegerArgumentType.integer(1, StorageController.MAX_AMOUNT))
                                 .executes(context -> withPlayer(context, player -> plugin.roleplayController()
                                         .buy(player, IntegerArgumentType.getInteger(context, "amount"))))))
                 .then(Commands.literal(give)
-                        .requires(source -> source.getSender().hasPermission("cubezon.admin"))
+                        .requires(source -> Perm.ADMIN_GIVE.has(source.getSender()))
                         .then(Commands.argument("player", ArgumentTypes.player())
-                                .executes(context -> giveComputer(context, 1))
+                                .executes(guard(Perm.ADMIN_GIVE, context -> giveComputer(context, 1)))
                                 .then(Commands.argument("amount", IntegerArgumentType.integer(1, StorageController.MAX_AMOUNT))
-                                        .executes(context -> giveComputer(context,
-                                                IntegerArgumentType.getInteger(context, "amount"))))));
+                                        .executes(guard(Perm.ADMIN_GIVE, context -> giveComputer(context,
+                                                IntegerArgumentType.getInteger(context, "amount")))))));
     }
 
     private int giveComputer(CommandContext<CommandSourceStack> context, int amount) throws CommandSyntaxException {
@@ -167,6 +175,7 @@ public final class CubezonCommand {
         return Commands.literal(root)
                 .executes(context -> withPlayer(context, player -> plugin.storageController().info(player)))
                 .then(Commands.literal(buy)
+                        .requires(source -> Perm.BUY_STORAGE.has(source.getSender()))
                         .executes(context -> withPlayer(context, player -> plugin.storageController().buy(player, null, 1)))
                         .then(Commands.argument("type", StringArgumentType.word())
                                 .suggests(this::suggestStorageTypes)
@@ -177,38 +186,38 @@ public final class CubezonCommand {
                                                 StringArgumentType.getString(context, "type"),
                                                 IntegerArgumentType.getInteger(context, "amount")))))))
                 .then(Commands.literal(give)
-                        .requires(source -> source.getSender().hasPermission("cubezon.admin"))
+                        .requires(source -> Perm.ADMIN_GIVE.has(source.getSender()))
                         .then(Commands.argument("player", ArgumentTypes.player())
-                                .executes(context -> giveStorage(context, null, 1))
+                                .executes(guard(Perm.ADMIN_GIVE, context -> giveStorage(context, null, 1)))
                                 .then(Commands.argument("type", StringArgumentType.word())
                                         .suggests(this::suggestStorageTypes)
-                                        .executes(context -> giveStorage(context, StringArgumentType.getString(context, "type"), 1))
+                                        .executes(guard(Perm.ADMIN_GIVE, context -> giveStorage(context, StringArgumentType.getString(context, "type"), 1)))
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1, StorageController.MAX_AMOUNT))
-                                                .executes(context -> giveStorage(context, StringArgumentType.getString(context, "type"),
-                                                        IntegerArgumentType.getInteger(context, "amount")))))))
+                                                .executes(guard(Perm.ADMIN_GIVE, context -> giveStorage(context, StringArgumentType.getString(context, "type"),
+                                                        IntegerArgumentType.getInteger(context, "amount"))))))))
                 .then(Commands.literal(type)
-                        .requires(source -> source.getSender().hasPermission("cubezon.admin"))
+                        .requires(source -> Perm.ADMIN_STORAGE_TYPES.has(source.getSender()))
                         .then(Commands.literal(create)
                                 .then(Commands.argument("id", StringArgumentType.word())
                                         .then(Commands.argument("capacity", IntegerArgumentType.integer(1, 10000))
                                                 .then(Commands.argument("price", DoubleArgumentType.doubleArg(0))
-                                                        .executes(context -> createStorageType(context, null))
+                                                        .executes(guard(Perm.ADMIN_STORAGE_TYPES, context -> createStorageType(context, null)))
                                                         .then(Commands.argument("name", StringArgumentType.greedyString())
-                                                                .executes(context -> createStorageType(context,
-                                                                        StringArgumentType.getString(context, "name"))))))))
+                                                                .executes(guard(Perm.ADMIN_STORAGE_TYPES, context -> createStorageType(context,
+                                                                        StringArgumentType.getString(context, "name")))))))))
                         .then(Commands.literal(remove)
                                 .then(Commands.argument("id", StringArgumentType.word())
                                         .suggests(this::suggestStorageTypes)
-                                        .executes(context -> {
+                                        .executes(guard(Perm.ADMIN_STORAGE_TYPES, context -> {
                                             plugin.storageController().removeType(context.getSource().getSender(),
                                                     StringArgumentType.getString(context, "id"));
                                             return Command.SINGLE_SUCCESS;
-                                        })))
+                                        }))))
                         .then(Commands.literal(list)
-                                .executes(context -> {
+                                .executes(guard(Perm.ADMIN_STORAGE_TYPES, context -> {
                                     plugin.storageController().listTypes(context.getSource().getSender());
                                     return Command.SINGLE_SUCCESS;
-                                })));
+                                }))));
     }
 
     private int createStorageType(CommandContext<CommandSourceStack> context, String name) {
@@ -241,16 +250,16 @@ public final class CubezonCommand {
      */
     private LiteralArgumentBuilder<CommandSourceStack> shopCommand(String root) {
         return Commands.literal(root)
-                .requires(source -> source.getSender().hasPermission("cubezon.admin"))
+                .requires(source -> Perm.ADMIN_SHOP.has(source.getSender()))
                 .then(Commands.literal("settings")
                         .then(Commands.literal("slots")
                                 .then(Commands.argument("player", StringArgumentType.word())
                                         .suggests(this::suggestOnlinePlayers)
-                                        .executes(context -> {
+                                        .executes(guard(Perm.ADMIN_SHOP, context -> {
                                             plugin.shopSlotsController().show(context.getSource().getSender(),
                                                     StringArgumentType.getString(context, "player"));
                                             return Command.SINGLE_SUCCESS;
-                                        })
+                                        }))
                                         .then(Commands.argument("value", StringArgumentType.word())
                                                 .suggests((context, builder) -> {
                                                     builder.suggest("reset");
@@ -259,12 +268,12 @@ public final class CubezonCommand {
                                                     builder.suggest("3");
                                                     return builder.buildFuture();
                                                 })
-                                                .executes(context -> {
+                                                .executes(guard(Perm.ADMIN_SHOP, context -> {
                                                     plugin.shopSlotsController().set(context.getSource().getSender(),
                                                             StringArgumentType.getString(context, "player"),
                                                             StringArgumentType.getString(context, "value"));
                                                     return Command.SINGLE_SUCCESS;
-                                                })))))
+                                                }))))))
                 .then(Commands.argument("shop", StringArgumentType.word())
                         .suggests((context, builder) -> plugin.storageController()
                                 .suggestSlugs(builder.getRemainingLowerCase())
@@ -272,8 +281,23 @@ public final class CubezonCommand {
                                     slugs.forEach(builder::suggest);
                                     return builder.build();
                                 }))
-                        .executes(context -> withPlayer(context, player -> plugin.storageController()
-                                .startZone(player, StringArgumentType.getString(context, "shop")))));
+                        .executes(guard(Perm.ADMIN_SHOP, context -> withPlayer(context, player -> plugin.storageController()
+                                .startZone(player, StringArgumentType.getString(context, "shop"))))));
+    }
+
+    /**
+     * Body of a command that needs {@code perm}. The node's requires() already hides the command from
+     * whoever lacks it; this checks again when it runs, so a mistake in the command tree can never expose it.
+     */
+    private Command<CommandSourceStack> guard(Perm perm, Command<CommandSourceStack> action) {
+        return context -> {
+            CommandSender sender = context.getSource().getSender();
+            if (!perm.has(sender)) {
+                sender.sendMessage(plugin.messages().get("error.no-admin"));
+                return 0;
+            }
+            return action.run(context);
+        };
     }
 
     private int withPlayer(CommandContext<CommandSourceStack> context, Consumer<Player> action) {
@@ -288,38 +312,38 @@ public final class CubezonCommand {
     /** Admin locker management: create, remove (optionally moving its orders to another locker), list. */
     private LiteralArgumentBuilder<CommandSourceStack> lockerCommand(String root, String create, String remove, String list) {
         return Commands.literal(root)
-                .requires(source -> source.getSender().hasPermission("cubezon.admin"))
+                .requires(source -> Perm.ADMIN_LOCKER.has(source.getSender()))
                 .then(Commands.literal(create)
                         .then(Commands.argument("name", StringArgumentType.word())
-                                .executes(context -> {
+                                .executes(guard(Perm.ADMIN_LOCKER, context -> {
                                     if (!(context.getSource().getSender() instanceof Player player)) {
                                         context.getSource().getSender().sendMessage(plugin.messages().get("link.players-only"));
                                         return 0;
                                     }
                                     plugin.lockerController().create(player, StringArgumentType.getString(context, "name"));
                                     return Command.SINGLE_SUCCESS;
-                                })))
+                                }))))
                 .then(Commands.literal(remove)
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests(this::suggestLockers)
-                                .executes(context -> {
+                                .executes(guard(Perm.ADMIN_LOCKER, context -> {
                                     plugin.lockerController().remove(context.getSource().getSender(),
                                             StringArgumentType.getString(context, "name"), null);
                                     return Command.SINGLE_SUCCESS;
-                                })
+                                }))
                                 .then(Commands.argument("moveTo", StringArgumentType.word())
                                         .suggests(this::suggestLockers)
-                                        .executes(context -> {
+                                        .executes(guard(Perm.ADMIN_LOCKER, context -> {
                                             plugin.lockerController().remove(context.getSource().getSender(),
                                                     StringArgumentType.getString(context, "name"),
                                                     StringArgumentType.getString(context, "moveTo"));
                                             return Command.SINGLE_SUCCESS;
-                                        }))))
+                                        })))))
                 .then(Commands.literal(list)
-                        .executes(context -> {
+                        .executes(guard(Perm.ADMIN_LOCKER, context -> {
                             plugin.lockerController().list(context.getSource().getSender());
                             return Command.SINGLE_SUCCESS;
-                        }));
+                        })));
     }
 
     private CompletableFuture<Suggestions> suggestLockers(CommandContext<CommandSourceStack> context,
@@ -338,14 +362,14 @@ public final class CubezonCommand {
         sender.sendMessage(messages.plain("help.deposit"));
         sender.sendMessage(messages.plain("help.pickup"));
         sender.sendMessage(messages.plain("help.storage"));
-        if (sender.hasPermission("cubezon.admin")) {
+        if (AdminAccess.has(sender)) {
             sender.sendMessage(messages.plain("help.storage-types"));
         }
         sender.sendMessage(messages.plain("help.item"));
         sender.sendMessage(messages.plain("help.mailbox"));
         sender.sendMessage(messages.plain("help.computer"));
         sender.sendMessage(messages.plain("help.employee"));
-        if (sender.hasPermission("cubezon.admin")) {
+        if (AdminAccess.has(sender)) {
             sender.sendMessage(messages.plain("help.shop"));
             sender.sendMessage(messages.plain("help.shop-slots"));
             sender.sendMessage(messages.plain("help.storage-give"));

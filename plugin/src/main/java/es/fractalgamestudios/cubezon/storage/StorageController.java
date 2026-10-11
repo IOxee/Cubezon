@@ -1,5 +1,6 @@
 package es.fractalgamestudios.cubezon.storage;
 
+import es.fractalgamestudios.cubezon.command.Perm;
 import es.fractalgamestudios.cubezon.CubezonPlugin;
 import es.fractalgamestudios.cubezon.database.StorageRepository;
 import es.fractalgamestudios.cubezon.database.StorageTypeRepository;
@@ -170,7 +171,7 @@ public final class StorageController {
     /** Main thread. Marks a corner; once both are set the zone is saved and the wands disappear. */
     public void markCorner(Player player, ZoneWand.Target target, BlockPosition position, int corner) {
         Messages messages = plugin.messages();
-        if (!player.hasPermission("cubezon.admin")) {
+        if (!Perm.ADMIN_SHOP.has(player)) {
             wand.removeAll(player);
             return;
         }
@@ -447,7 +448,7 @@ public final class StorageController {
             player.sendMessage(messages.get("storage.outside-zone"));
             return;
         }
-        if (!zone.ownerId().equals(player.getUniqueId()) && !player.hasPermission("cubezon.admin")) {
+        if (!zone.ownerId().equals(player.getUniqueId()) && !Perm.ADMIN_BYPASS.has(player)) {
             event.setCancelled(true);
             player.sendMessage(messages.get("storage.not-yours", Placeholder.unparsed("shop", zone.shopName())));
             return;
@@ -488,7 +489,7 @@ public final class StorageController {
         boolean owner = registry.zoneOf(storageBlock.shopId())
                 .map(zone -> zone.ownerId().equals(player.getUniqueId()))
                 .orElse(false);
-        if (!owner && !player.hasPermission("cubezon.admin")) {
+        if (!owner && !Perm.ADMIN_BYPASS.has(player)) {
             player.sendMessage(messages.get("storage.break-denied", shopTag));
             return;
         }

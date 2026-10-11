@@ -35,6 +35,27 @@ main:
   close:
     slot: 22
     material: barrier
+  commission-button:
+    slot: 18
+    material: gold_ingot
+
+# Courier commission (owner only, roleplay mode)
+commission:
+  NONE:
+    slot: 10
+    material: gray_dye
+  PERCENT_TOTAL:
+    slot: 12
+    material: gold_nugget
+  PERCENT_EXPRESS:
+    slot: 14
+    material: feather
+  FIXED:
+    slot: 16
+    material: emerald
+  back:
+    slot: 22
+    material: arrow
 
 # One order (✔/✖)
 orderDecision:

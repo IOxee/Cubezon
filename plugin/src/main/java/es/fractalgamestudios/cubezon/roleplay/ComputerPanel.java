@@ -1,5 +1,6 @@
 package es.fractalgamestudios.cubezon.roleplay;
 
+import es.fractalgamestudios.cubezon.command.Perm;
 import es.fractalgamestudios.cubezon.CubezonPlugin;
 import es.fractalgamestudios.cubezon.database.RoleRepository;
 import es.fractalgamestudios.cubezon.database.ShopPanelRepository;
@@ -13,6 +14,7 @@ import es.fractalgamestudios.cubezon.gui.Icons;
 import es.fractalgamestudios.cubezon.gui.MenuLayout;
 import es.fractalgamestudios.cubezon.i18n.Messages;
 import es.fractalgamestudios.cubezon.item.ItemKey;
+import es.fractalgamestudios.cubezon.order.CourierCommission;
 import es.fractalgamestudios.cubezon.order.OrderMode;
 import es.fractalgamestudios.cubezon.roles.ShopPermission;
 import es.fractalgamestudios.cubezon.roles.ShopRole;
@@ -84,7 +86,7 @@ public final class ComputerPanel {
             return;
         }
         UUID playerId = player.getUniqueId();
-        boolean admin = player.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
         RoleRepository roles = plugin.roles();
         async(player, () -> {
             if (!admin && !plugin.roleplay().canUse(computer.shopId(), playerId)) {
@@ -132,8 +134,80 @@ public final class ComputerPanel {
                 (p, click) -> showListings(p, context));
         gui.set(menu.slot("main.storage-button", 16), Icons.decorate(menu.icon("main.storage-button", Material.BARREL), messages, "panel.storage.button", List.of("panel.storage.hint"), tags),
                 (p, click) -> showStorage(p, context));
+        if (plugin.orderMode() == OrderMode.ROLEPLAY) {
+            TagResolver commissionTags = commissionTags(shop.commission());
+            gui.set(menu.slot("main.commission-button", 18), Icons.decorate(menu.icon("main.commission-button", Material.GOLD_INGOT), messages,
+                            "panel.commission.button", List.of("panel.commission.current", "panel.commission.hint",
+                                    context.owner() ? "panel.commission.choose" : "panel.commission.owner-only"), commissionTags),
+                    (p, click) -> {
+                        if (context.owner()) {
+                            showCommission(p, context);
+                        }
+                    });
+        }
         gui.set(menu.slot("main.close", 22), Icons.decorate(menu.icon("main.close", Material.BARRIER), messages, "panel.close", List.of()), (p, click) -> p.closeInventory());
         gui.fill(menu.filler()).open(player);
+    }
+
+    /** Owner only: what the employee who delivers a package earns, out of the sale. */
+    private void showCommission(Player player, Context context) {
+        Messages messages = plugin.messages();
+        CourierCommission current = context.shop().commission();
+        Gui gui = new Gui(plugin.getServer(), 3, messages.plain("panel.commission.title", shopTags(context.shop())));
+        TagResolver tags = commissionTags(current);
+        for (CourierCommission.Mode mode : CourierCommission.Mode.values()) {
+            String entry = "commission." + mode.name();
+            gui.set(menu.slot(entry, 10 + 2 * mode.ordinal()), Icons.decorate(menu.icon(entry, Material.PAPER), messages,
+                            "panel.commission." + mode.name(), List.of(mode == current.mode() ? "panel.commission.selected"
+                                    : "panel.commission.choose", "panel.commission.hint"), tags),
+                    (p, click) -> chooseCommission(p, context, mode));
+        }
+        gui.set(menu.slot("commission.back", 22), Icons.decorate(menu.icon("commission.back", Material.ARROW), messages, "panel.back", List.of()),
+                (p, click) -> showMain(p, context));
+        gui.fill(menu.filler()).open(player);
+    }
+
+    /** No commission is saved at once; a percentage or an amount is asked in chat first. */
+    private void chooseCommission(Player player, Context context, CourierCommission.Mode mode) {
+        ChatPrompt prompt = plugin.chatPrompt();
+        switch (mode) {
+            case NONE -> saveCommission(player, context, CourierCommission.NONE);
+            case PERCENT_TOTAL, PERCENT_EXPRESS -> prompt.askAmount(player, "prompt.commission-percent", 100,
+                    percent -> saveCommission(player, context, new CourierCommission(mode, BigDecimal.valueOf(percent))));
+            case FIXED -> prompt.askPrice(player, "prompt.commission-fixed",
+                    amount -> saveCommission(player, context, new CourierCommission(mode, amount)));
+        }
+    }
+
+    private void saveCommission(Player player, Context context, CourierCommission commission) {
+        ShopPanelRepository panel = plugin.shopPanel();
+        if (panel == null) {
+            return;
+        }
+        UUID playerId = player.getUniqueId();
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
+        async(player, () -> panel.setCourierCommission(context.shop().id(), playerId, admin, commission), saved -> {
+            Messages messages = plugin.messages();
+            if (!saved) {
+                player.sendMessage(messages.get("panel.commission.failed"));
+                return;
+            }
+            player.sendMessage(messages.get("panel.commission.saved", commissionTags(commission)));
+            plugin.getLogger().info("Courier commission of " + context.shop().slug() + " set to " + commission.mode() + " "
+                    + commission.value() + " by " + player.getName());
+            open(player, context.computer());
+        });
+    }
+
+    /** &lt;commission&gt; (the current choice in words) and &lt;max&gt; (the server cap). */
+    private TagResolver commissionTags(CourierCommission commission) {
+        Messages messages = plugin.messages();
+        String value = commission.mode().percent() ? commission.value().stripTrailingZeros().toPlainString()
+                : plugin.economy() == null ? commission.value().toPlainString() : plugin.economy().format(commission.value().doubleValue());
+        return TagResolver.resolver(
+                Placeholder.component("commission", messages.plain("panel.commission.describe." + commission.mode().name(),
+                        Placeholder.unparsed("value", value))),
+                Placeholder.unparsed("max", String.valueOf(orders.courierMaxPercent())));
     }
 
     void showOrders(Player player, Context context) {
@@ -200,7 +274,7 @@ public final class ComputerPanel {
                     (p, click) -> orders.accept(p, context.computer(), order));
             gui.set(menu.slot("orderDecision.decision-reject", 42), Icons.decorate(menu.icon("orderDecision.decision-reject", Material.RED_CONCRETE), messages, "panel.decision.reject", List.of("panel.decision.reject-hint"), tags),
                     (p, click) -> orders.reject(p, context.computer(), order, () -> showOrders(p, context)));
-        } else if (order.accepted() && !order.toMailbox() && context.can(ShopPermission.ORDERS_PACKAGE)) {
+        } else if (order.accepted() && ExpressRule.needsCourier(order.toMailbox(), plugin.mailboxController().handDelivery()) && context.can(ShopPermission.ORDERS_PACKAGE)) {
             gui.set(menu.slot("orderDecision.decision-reprint", 40), Icons.decorate(menu.icon("orderDecision.decision-reprint", Material.PAPER), messages, "panel.decision.reprint", List.of("panel.decision.reprint-hint"), tags),
                     (p, click) -> orders.reprintPackage(p, order));
         }
@@ -272,7 +346,7 @@ public final class ComputerPanel {
             return;
         }
         UUID playerId = player.getUniqueId();
-        boolean admin = player.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
         async(player, () -> hire ? panel.addMember(context.shop().id(), memberId, playerId, admin).name()
                 : panel.removeMember(context.shop().id(), memberId, playerId, admin) ? "REMOVED" : "NOT_ALLOWED", result -> {
             TagResolver tags = TagResolver.resolver(Placeholder.unparsed("player", memberName),
@@ -329,7 +403,7 @@ public final class ComputerPanel {
             return;
         }
         UUID playerId = player.getUniqueId();
-        boolean admin = player.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
         async(player, () -> roles.assign(context.shop().id(), member.id(), role.id(), playerId, admin), result -> {
             player.sendMessage(plugin.messages().get("panel.roles.result." + result.name().toLowerCase().replace('_', '-'),
                     Placeholder.unparsed("player", member.name()), Placeholder.unparsed("role", role.name())));
@@ -357,7 +431,7 @@ public final class ComputerPanel {
             gui.set(menu.slot("roles.roles-new", 53), Icons.decorate(menu.icon("roles.roles-new", Material.WRITABLE_BOOK), messages, "panel.roles.new", List.of("panel.roles.new-hint")),
                     (p, click) -> plugin.chatPrompt().askText(p, "prompt.role-name", 1, 24,
                             name -> changeRole(p, context, null, repo -> repo.create(context.shop().id(), p.getUniqueId(),
-                                    p.hasPermission("cubezon.admin"), name))));
+                                    Perm.ADMIN_BYPASS.has(p), name))));
             gui.set(menu.slot("roles.back", BACK_SLOT), Icons.decorate(menu.icon("roles.back", Material.ARROW), messages, "panel.back", List.of()), (p, click) -> showStaff(p, context));
             gui.fill(menu.filler()).open(player);
         });
@@ -385,17 +459,17 @@ public final class ComputerPanel {
                             changed.add(permission);
                         }
                         changeRole(p, context, role, repo -> repo.setPermissions(context.shop().id(), role.id(),
-                                p.getUniqueId(), p.hasPermission("cubezon.admin"), changed));
+                                p.getUniqueId(), Perm.ADMIN_BYPASS.has(p), changed));
                     });
         }
         gui.set(menu.slot("role.roles-rename", 28), Icons.decorate(menu.icon("role.roles-rename", Material.NAME_TAG), messages, "panel.roles.rename", List.of()),
                 (p, click) -> plugin.chatPrompt().askText(p, "prompt.role-name", 1, 24,
                         name -> changeRole(p, context, null, repo -> repo.rename(context.shop().id(), role.id(),
-                                p.getUniqueId(), p.hasPermission("cubezon.admin"), name))));
+                                p.getUniqueId(), Perm.ADMIN_BYPASS.has(p), name))));
         if (!role.isDefault()) {
             gui.set(menu.slot("role.roles-make-default", 30), Icons.decorate(menu.icon("role.roles-make-default", Material.NETHER_STAR), messages, "panel.roles.make-default", List.of("panel.roles.make-default-hint")),
                     (p, click) -> changeRole(p, context, null, repo -> repo.makeDefault(context.shop().id(), role.id(),
-                            p.getUniqueId(), p.hasPermission("cubezon.admin"))));
+                            p.getUniqueId(), Perm.ADMIN_BYPASS.has(p))));
             gui.set(menu.slot("role.roles-delete", 34), Icons.decorate(menu.icon("role.roles-delete", Material.BARRIER), messages, "panel.roles.delete", List.of("panel.roles.delete-hint")),
                     (p, click) -> {
                         if (click != ClickType.SHIFT_LEFT && click != ClickType.SHIFT_RIGHT) {
@@ -403,7 +477,7 @@ public final class ComputerPanel {
                             return;
                         }
                         changeRole(p, context, null, repo -> repo.delete(context.shop().id(), role.id(),
-                                p.getUniqueId(), p.hasPermission("cubezon.admin")));
+                                p.getUniqueId(), Perm.ADMIN_BYPASS.has(p)));
                     });
         }
         gui.set(menu.slot("role.back", 27), Icons.decorate(menu.icon("role.back", Material.ARROW), messages, "panel.back", List.of()), (p, click) -> showRoles(p, context));
@@ -511,18 +585,18 @@ public final class ComputerPanel {
             gui.set(menu.slot("listing.listing-rename", 14), Icons.decorate(menu.icon("listing.listing-rename", Material.NAME_TAG), messages, "panel.listing.rename", List.of("panel.listing.rename-hint"), tags),
                     (p, click) -> plugin.chatPrompt().askText(p, "prompt.product-title", titleMin(), titleMax(),
                             title -> editProduct(p, context, listing, "panel.listing.renamed", panel -> panel.setTitle(
-                                    listing.id(), context.shop().id(), p.getUniqueId(), p.hasPermission("cubezon.admin"), title))));
+                                    listing.id(), context.shop().id(), p.getUniqueId(), Perm.ADMIN_BYPASS.has(p), title))));
             gui.set(menu.slot("listing.listing-price-button", 15), Icons.decorate(menu.icon("listing.listing-price-button", Material.GOLD_NUGGET), messages, "panel.listing.price-button", List.of("panel.listing.price-hint"), tags),
                     (p, click) -> plugin.chatPrompt().askPrice(p, "prompt.product-price",
                             price -> editProduct(p, context, listing, "panel.listing.price-changed", panel -> panel.setPrice(
-                                    listing.id(), context.shop().id(), p.getUniqueId(), p.hasPermission("cubezon.admin"), price))));
+                                    listing.id(), context.shop().id(), p.getUniqueId(), Perm.ADMIN_BYPASS.has(p), price))));
             boolean active = "ACTIVE".equals(listing.status());
             gui.set(menu.slot("listing.status", 16), Icons.decorate(active ? menu.icon("listing.status-active", Material.LIME_DYE)
                             : menu.icon("listing.status-paused", Material.GRAY_DYE), messages,
                             active ? "panel.listing.pause" : "panel.listing.activate", List.of("panel.listing.status-line"), tags),
                     (p, click) -> editProduct(p, context, listing, active ? "panel.listing.paused" : "panel.listing.activated",
                             panel -> panel.setActive(listing.id(), context.shop().id(), p.getUniqueId(),
-                                    p.hasPermission("cubezon.admin"), !active)));
+                                    Perm.ADMIN_BYPASS.has(p), !active)));
             gui.set(menu.slot("listing.listing-remove", 26), Icons.decorate(menu.icon("listing.listing-remove", Material.BARRIER), messages, "panel.listing.remove", List.of("panel.listing.remove-hint"), tags),
                     (p, click) -> {
                         if (click != ClickType.SHIFT_LEFT && click != ClickType.SHIFT_RIGHT) {
@@ -530,7 +604,7 @@ public final class ComputerPanel {
                             return;
                         }
                         editProduct(p, context, listing, "panel.listing.removed", panel -> panel.removeListing(
-                                listing.id(), context.shop().id(), p.getUniqueId(), p.hasPermission("cubezon.admin")));
+                                listing.id(), context.shop().id(), p.getUniqueId(), Perm.ADMIN_BYPASS.has(p)));
                     });
         }
         if (listing.exact() && listing.sample() != null) {
@@ -565,7 +639,7 @@ public final class ComputerPanel {
             return;
         }
         UUID playerId = player.getUniqueId();
-        boolean admin = player.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
         async(player, () -> panel.createListing(context.shop().id(), playerId, admin, title, key.baseMaterial(), key.key(),
                 unit, price), created -> {
             Messages messages = plugin.messages();
@@ -605,7 +679,7 @@ public final class ComputerPanel {
             return;
         }
         UUID playerId = player.getUniqueId();
-        boolean admin = player.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
         async(player, () -> panel.withdraw(listing.id(), context.shop().id(), playerId, admin, count), units -> {
             Messages messages = plugin.messages();
             if (units.isEmpty()) {
@@ -650,7 +724,7 @@ public final class ComputerPanel {
         }
         byte[] newSample = sample;
         UUID playerId = player.getUniqueId();
-        boolean admin = player.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
         async(player, () -> panel.setSample(listing.id(), context.shop().id(), playerId, admin, newSample), changed -> {
             player.sendMessage(messages.get(!changed ? "computer.failed"
                     : newSample == null ? "panel.listing.sample-cleared" : "panel.listing.sample-set",

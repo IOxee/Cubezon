@@ -55,7 +55,8 @@ public final class MailboxListener implements Listener {
         }
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
-        if (event.getHand() == EquipmentSlot.HAND) {
+        if (event.getHand() == EquipmentSlot.HAND
+                && !controller.deliverPackage(event.getPlayer(), mailbox, event.getItem())) {
             controller.open(event.getPlayer(), mailbox);
         }
     }

@@ -1,5 +1,6 @@
 package es.fractalgamestudios.cubezon.mailbox;
 
+import es.fractalgamestudios.cubezon.command.Perm;
 import es.fractalgamestudios.cubezon.CubezonPlugin;
 import es.fractalgamestudios.cubezon.database.MailboxRepository;
 import es.fractalgamestudios.cubezon.i18n.Messages;
@@ -68,6 +69,22 @@ public final class MailboxController {
 
     public boolean feeToSeller() {
         return plugin.getConfig().getBoolean("mailbox.express.fee-to-seller", false);
+    }
+
+    /** Right click on a mailbox with an express package in hand delivers it. False when the item is not a package. */
+    public boolean deliverPackage(org.bukkit.entity.Player player, Mailbox mailbox, org.bukkit.inventory.ItemStack item) {
+        var roleplay = plugin.roleplayController();
+        var label = roleplay.items().readPackage(item).orElse(null);
+        if (label == null) {
+            return false;
+        }
+        roleplay.deliverToMailbox(player, mailbox, label);
+        return true;
+    }
+
+    /** Roleplay: express orders are carried to the buyer's mailbox by hand instead of arriving on their own. */
+    public boolean handDelivery() {
+        return plugin.getConfig().getBoolean("mailbox.express.hand-delivery", false);
     }
 
     public int maxPerPlayer() {
@@ -212,7 +229,7 @@ public final class MailboxController {
         event.setCancelled(true);
         Messages messages = plugin.messages();
         Player player = event.getPlayer();
-        if (!mailbox.ownerId().equals(player.getUniqueId()) && !player.hasPermission("cubezon.admin")) {
+        if (!mailbox.ownerId().equals(player.getUniqueId()) && !Perm.ADMIN_BYPASS.has(player)) {
             player.sendMessage(messages.get("mailbox.not-yours", Placeholder.unparsed("owner", mailbox.ownerName())));
             return;
         }

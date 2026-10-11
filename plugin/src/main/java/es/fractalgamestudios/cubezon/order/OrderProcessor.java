@@ -68,6 +68,11 @@ public final class OrderProcessor {
         }
     }
 
+    /** How long a new order waits before it is processed (config.yml orders.automatic; /cz reload applies it). */
+    public OrderDelay delay() {
+        return OrderDelay.fromConfig(plugin.getConfig());
+    }
+
     /** Called by the poll timer on the main thread. */
     public void poll() {
         OrderRepository orders = plugin.orders();
@@ -87,7 +92,7 @@ public final class OrderProcessor {
         execute(() -> {
             ClaimResult result;
             try {
-                result = orders.claimNext(OrderProcessor::isValidItem);
+                result = orders.claimNext(OrderProcessor::isValidItem, delay());
             } catch (SQLException | RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "Could not claim the next order", e);
                 running.set(false);

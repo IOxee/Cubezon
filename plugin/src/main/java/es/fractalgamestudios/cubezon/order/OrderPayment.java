@@ -70,8 +70,11 @@ public final class OrderPayment {
                 : Optional.of(FailureReason.PAYMENT_ERROR);
     }
 
-    /** Pays held money out (seller on delivery, buyer on refund). Nothing moves for self purchases. */
+    /**
+     * Pays held money out (seller on delivery, buyer on refund). Nothing moves for self purchases or
+     * when nothing is owed (a seller whose whole share went to the courier).
+     */
     public static boolean pay(Wallet wallet, UUID player, BigDecimal amount, boolean selfPurchase) {
-        return selfPurchase || wallet.deposit(player, amount);
+        return selfPurchase || amount.signum() <= 0 || wallet.deposit(player, amount);
     }
 }

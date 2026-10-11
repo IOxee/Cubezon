@@ -211,6 +211,7 @@ public final class CubezonPlugin extends JavaPlugin {
         mailboxController.itemShop().registerRecipe();
         shopSlotsController.publishDefault();
         mailboxController.publishSettings();
+        roleplayController.publishMode();
         refreshRegistries();
         return OrderMode.parse(getConfig().getString("orders.mode", "automatic")) != orderMode;
     }

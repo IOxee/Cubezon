@@ -46,11 +46,20 @@ orders:
   poll-seconds: 5
   # Maximum orders processed per poll.
   per-run: 20
+  automatic:
+    # Automatic mode: each new order waits a random time between these two values (minutes) before it is
+    # processed, so deliveries feel like a shipment. 0 and 0 = immediately. Roleplay mode has no such wait.
+    delay-min-minutes: 5
+    delay-max-minutes: 10
   roleplay:
     # Hours to accept or reject an order; after that it is cancelled without charging.
     accept-hours: 48
     # Hours to deliver an accepted order; after that it is cancelled and the buyer refunded.
     deliver-hours: 48
+    # Courier commission: each shop chooses in its computer what it pays the employee who delivers a
+    # package (a % of the goods, a % of the express fee or a fixed amount). It comes out of the seller's
+    # payout and can never be more than this % of the goods (0-100). The owner and the buyer never earn it.
+    courier-max-percent: 50
 
 # Company computer (roleplay mode): placed inside the shop's zone.
 computer:
@@ -146,6 +155,9 @@ mailbox:
     fee: 100.0
     # true: the fee goes to the seller; false: the server keeps it.
     fee-to-seller: false
+    # Roleplay mode only. false: an accepted express order lands in the buyer's mailbox on its own.
+    # true: the shop prints a package and an employee carries it to the buyer's mailbox (right click on it).
+    hand-delivery: false
 
 # General settings.
 settings:

@@ -1,5 +1,6 @@
 package es.fractalgamestudios.cubezon.roleplay;
 
+import es.fractalgamestudios.cubezon.command.Perm;
 import es.fractalgamestudios.cubezon.CubezonPlugin;
 import es.fractalgamestudios.cubezon.database.OrderRepository;
 import es.fractalgamestudios.cubezon.database.OrderRepository.ClaimResult;
@@ -8,8 +9,10 @@ import es.fractalgamestudios.cubezon.gui.Sounds;
 import es.fractalgamestudios.cubezon.i18n.Messages;
 import es.fractalgamestudios.cubezon.locker.BlockPosition;
 import es.fractalgamestudios.cubezon.locker.Locker;
+import es.fractalgamestudios.cubezon.mailbox.Mailbox;
 import es.fractalgamestudios.cubezon.order.ClaimedOrder;
 import es.fractalgamestudios.cubezon.order.FailureReason;
+import es.fractalgamestudios.cubezon.order.OrderDelay;
 import es.fractalgamestudios.cubezon.order.OrderMode;
 import es.fractalgamestudios.cubezon.order.OrderPayment;
 import es.fractalgamestudios.cubezon.order.OrderProcessor;
@@ -32,6 +35,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -41,6 +45,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
@@ -92,9 +98,15 @@ public final class RoleplayController {
         if (roleplay == null) {
             return;
         }
+        int courierMaxPercent = courierMaxPercent();
         plugin.dbExecutor().execute(() -> {
             try {
                 roleplay.publishSetting("orders_mode", plugin.orderMode().key());
+                // Roleplay has no artificial wait: the shop accepts and delivers when its staff does.
+                OrderDelay delay = roleplay() ? OrderDelay.NONE : OrderDelay.fromConfig(plugin.getConfig());
+                roleplay.publishSetting("auto_delay_min_seconds", String.valueOf(delay.minSeconds()));
+                roleplay.publishSetting("auto_delay_max_seconds", String.valueOf(delay.maxSeconds()));
+                roleplay.publishSetting("courier_max_percent", String.valueOf(courierMaxPercent));
             } catch (SQLException e) {
                 plugin.getLogger().log(Level.WARNING, "Could not publish the order mode", e);
             }
@@ -139,28 +151,40 @@ public final class RoleplayController {
                 if (economy == null) {
                     return; // Refunds and payouts need the economy; they wait until it is back.
                 }
-                List<ClaimedOrder> expired = roleplay ? orders.expireAccepted(deliverHours) : List.of();
-                List<ClaimedOrder> payouts = orders.claimPendingPayouts();
-                if (expired.isEmpty() && payouts.isEmpty()) {
-                    return;
+                // Each claim commits on its own: its money is handed to the main thread before the next claim
+                // runs, so a later failure never strands what an earlier one already marked.
+                if (roleplay) {
+                    payOnMainThread(economy, orders.expireAccepted(deliverHours), this::refundExpired);
                 }
-                runOnMainThread(() -> {
-                    var wallet = new VaultWallet(economy, plugin.getServer());
-                    for (ClaimedOrder order : expired) {
-                        if (!OrderPayment.pay(wallet, order.buyerId(), order.charged(), order.selfPurchase())) {
-                            plugin.getLogger().severe("Order " + order.id() + " expired undelivered (REFUNDED) but the refund of "
-                                    + order.total() + " to buyer " + order.buyerId() + " failed. Give it back by hand.");
-                        }
-                        notifyBuyerFailed(order, FailureReason.DELIVERY_EXPIRED);
-                    }
-                    for (ClaimedOrder order : payouts) {
-                        payOut(wallet, order);
-                    }
-                });
+                payOnMainThread(economy, orders.claimPendingPayouts(), this::payOut);
+                payOnMainThread(economy, orders.claimPendingCourierPayouts(), this::payCourier);
             } catch (SQLException | RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "Could not run the order jobs", e);
             }
         });
+    }
+
+    /** Database thread. Pays each claimed order on the main thread. */
+    private void payOnMainThread(Economy economy, List<ClaimedOrder> claimed,
+                                 BiConsumer<OrderPayment.Wallet, ClaimedOrder> pay) {
+        if (claimed.isEmpty()) {
+            return;
+        }
+        runOnMainThread(() -> {
+            var wallet = new VaultWallet(economy, plugin.getServer());
+            for (ClaimedOrder order : claimed) {
+                pay.accept(wallet, order);
+            }
+        });
+    }
+
+    /** Main thread. The order is already REFUNDED in the database; the buyer gets the money back. */
+    private void refundExpired(OrderPayment.Wallet wallet, ClaimedOrder order) {
+        if (!OrderPayment.pay(wallet, order.buyerId(), order.charged(), order.selfPurchase())) {
+            plugin.getLogger().severe("Order " + order.id() + " expired undelivered (REFUNDED) but the refund of "
+                    + order.charged() + " to buyer " + order.buyerId() + " failed. Give it back by hand.");
+        }
+        notifyBuyerFailed(order, FailureReason.DELIVERY_EXPIRED);
     }
 
     public void handlePlace(BlockPlaceEvent event) {
@@ -182,7 +206,7 @@ public final class RoleplayController {
             player.sendMessage(messages.get("computer.outside-zone"));
             return;
         }
-        if (!zone.ownerId().equals(player.getUniqueId()) && !player.hasPermission("cubezon.admin")) {
+        if (!zone.ownerId().equals(player.getUniqueId()) && !Perm.ADMIN_BYPASS.has(player)) {
             event.setCancelled(true);
             player.sendMessage(messages.get("storage.not-yours", Placeholder.unparsed("shop", zone.shopName())));
             return;
@@ -217,7 +241,7 @@ public final class RoleplayController {
         boolean owner = plugin.storageController().registry().zoneOf(computer.shopId())
                 .map(zone -> zone.ownerId().equals(player.getUniqueId()))
                 .orElse(false);
-        if (!owner && !player.hasPermission("cubezon.admin")) {
+        if (!owner && !Perm.ADMIN_BYPASS.has(player)) {
             player.sendMessage(messages.get("computer.break-denied", shopTag));
             return;
         }
@@ -278,7 +302,7 @@ public final class RoleplayController {
         }
         player.closeInventory();
         UUID deciderId = player.getUniqueId();
-        boolean admin = player.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
         plugin.dbExecutor().execute(() -> {
             ClaimResult result;
             try {
@@ -332,7 +356,7 @@ public final class RoleplayController {
                         notifyBuyerFailed(order, outcome.get());
                         return;
                     }
-                    if (order.toMailbox()) {
+                    if (order.toMailbox() && !ExpressRule.needsCourier(true, plugin.mailboxController().handDelivery())) {
                         acceptIntoMailbox(player, order, orders, economy);
                         return;
                     }
@@ -343,9 +367,9 @@ public final class RoleplayController {
                     }
                     runOnMainThread(() -> {
                         if (player.isOnline()) {
-                            SpecialItemShop.giveOrDrop(player, packageOf(view));
+                            // The package is not printed on its own: staff print it from the order screen.
                             plugin.sounds().play(player, Sounds.Event.SUCCESS);
-                            player.sendMessage(messages.get("computer.accepted",
+                            player.sendMessage(messages.get(order.toMailbox() ? "computer.accepted-hand" : "computer.accepted",
                                     Placeholder.unparsed("title", order.title()),
                                     Placeholder.unparsed("locker", order.lockerName())));
                         }
@@ -376,7 +400,7 @@ public final class RoleplayController {
             return;
         }
         UUID deciderId = player.getUniqueId();
-        boolean admin = player.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
         plugin.dbExecutor().execute(() -> {
             try {
                 if (!admin && !mayDecide(computer.shopId(), deciderId)) {
@@ -438,10 +462,62 @@ public final class RoleplayController {
     /** Main thread. Right click on a locker holding a package. */
     public void deliver(Player player, Locker locker, RoleplayItems.PackageLabel label) {
         Messages messages = plugin.messages();
-        if (!label.lockerId().equals(locker.id())) {
-            player.sendMessage(messages.get("computer.wrong-locker", Placeholder.unparsed("locker", label.lockerName())));
+        if (label.mailbox()) {
+            player.sendMessage(messages.get("computer.wrong-mailbox", Placeholder.unparsed("owner", label.targetName())));
             return;
         }
+        if (!label.targetId().equals(locker.id())) {
+            player.sendMessage(messages.get("computer.wrong-locker", Placeholder.unparsed("locker", label.targetName())));
+            return;
+        }
+        OrderRepository.Courier courier = courier(player);
+        completeDelivery(player, label, orders -> orders.deliver(label.orderId(), locker.id(), locker.name(), courier),
+                order -> messages.get("computer.delivered",
+                        Placeholder.unparsed("title", order.title()), Placeholder.unparsed("locker", locker.name())),
+                order -> messages.get("order.ready",
+                        Placeholder.unparsed("quantity", String.valueOf(order.quantity())),
+                        Placeholder.unparsed("title", order.title()),
+                        Placeholder.unparsed("locker", locker.name())));
+    }
+
+    /** Main thread. Right click on the buyer's mailbox with a hand-delivered express package. */
+    public void deliverToMailbox(Player player, Mailbox mailbox, RoleplayItems.PackageLabel label) {
+        Messages messages = plugin.messages();
+        if (!label.mailbox() || !label.targetId().equals(mailbox.id())) {
+            player.sendMessage(messages.get("computer.wrong-mailbox", Placeholder.unparsed("owner", label.targetName())));
+            return;
+        }
+        OrderRepository.Courier courier = courier(player);
+        completeDelivery(player, label, orders -> orders.deliverToMailbox(label.orderId(), mailbox.id(), courier),
+                order -> messages.get("computer.delivered-mailbox",
+                        Placeholder.unparsed("title", order.title()), Placeholder.unparsed("owner", mailbox.ownerName())),
+                order -> messages.get("order.ready-mailbox",
+                        Placeholder.unparsed("quantity", String.valueOf(order.quantity())),
+                        Placeholder.unparsed("title", order.title())));
+    }
+
+    /** Main thread. The player carrying a package, with the commission rules read now from config.yml. */
+    private OrderRepository.Courier courier(Player player) {
+        return new OrderRepository.Courier(player.getUniqueId(), courierMaxPercent());
+    }
+
+    /** Server cap on the courier's share of the goods, 0-100 (orders.roleplay.courier-max-percent). */
+    public int courierMaxPercent() {
+        return Math.clamp(plugin.getConfig().getInt("orders.roleplay.courier-max-percent", 50), 0, 100);
+    }
+
+    /** What one delivery does in the database: moves a PAID order to READY and claims the seller's payout. */
+    private interface DeliveryCall {
+        Optional<ClaimedOrder> run(OrderRepository orders) throws SQLException;
+    }
+
+    /**
+     * Shared by locker and mailbox deliveries. Database thread: the order becomes READY (only once, only at its
+     * target); main thread: the package leaves the inventory, the seller is paid and both sides are told.
+     */
+    private void completeDelivery(Player player, RoleplayItems.PackageLabel label, DeliveryCall call,
+                                  Function<ClaimedOrder, Component> toDeliverer, Function<ClaimedOrder, Component> toBuyer) {
+        Messages messages = plugin.messages();
         OrderRepository orders = plugin.orders();
         if (orders == null) {
             player.sendMessage(messages.get("error.database-required"));
@@ -454,7 +530,7 @@ public final class RoleplayController {
         plugin.dbExecutor().execute(() -> {
             Optional<ClaimedOrder> delivered;
             try {
-                delivered = orders.deliver(label.orderId(), locker.id(), locker.name());
+                delivered = call.run(orders);
             } catch (SQLException e) {
                 busyOrders.remove(label.orderId());
                 plugin.getLogger().log(Level.WARNING, "Could not deliver order " + label.orderId(), e);
@@ -473,17 +549,20 @@ public final class RoleplayController {
                 ClaimedOrder order = delivered.get();
                 if (economy == null) {
                     releasePayout(orders, order); // Retried by runJobs once the economy is back.
+                    if (order.paysCourier()) {
+                        releaseCourierPayout(orders, order);
+                    }
                 } else {
-                    payOut(new VaultWallet(economy, plugin.getServer()), order);
+                    var wallet = new VaultWallet(economy, plugin.getServer());
+                    payOut(wallet, order);
+                    if (order.paysCourier()) {
+                        payCourier(wallet, order);
+                    }
                 }
-                player.sendMessage(messages.get("computer.delivered",
-                        Placeholder.unparsed("title", order.title()), Placeholder.unparsed("locker", locker.name())));
+                player.sendMessage(toDeliverer.apply(order));
                 plugin.sounds().play(player, Sounds.Event.PACKAGE_DELIVERED);
                 plugin.sounds().play(plugin.getServer().getPlayer(order.buyerId()), Sounds.Event.ORDER_READY);
-                notifyOnline(order.buyerId(), messages.get("order.ready",
-                        Placeholder.unparsed("quantity", String.valueOf(order.quantity())),
-                        Placeholder.unparsed("title", order.title()),
-                        Placeholder.unparsed("locker", locker.name())));
+                notifyOnline(order.buyerId(), toBuyer.apply(order));
             });
         });
     }
@@ -512,9 +591,48 @@ public final class RoleplayController {
                     Placeholder.unparsed("quantity", String.valueOf(order.quantity())),
                     Placeholder.unparsed("title", order.title()),
                     Placeholder.unparsed("shop", order.shopName()),
-                    Placeholder.unparsed("total", plugin.economy() == null ? order.total().toPlainString()
-                            : plugin.economy().format(order.total().doubleValue())))));
+                    Placeholder.unparsed("total", money(order.sellerAmount(plugin.mailboxController().feeToSeller()))))));
         }
+    }
+
+    /** Main thread. The commission was claimed (courier_paid_at) with the delivery; if paying fails it is released for a retry. */
+    private void payCourier(OrderPayment.Wallet wallet, ClaimedOrder order) {
+        UUID courier = order.courierId();
+        boolean paid;
+        try {
+            paid = courier != null && wallet.deposit(courier, order.courierAmount());
+        } catch (RuntimeException e) {
+            plugin.getLogger().log(Level.WARNING, "Economy error paying the courier of order " + order.id(), e);
+            paid = false;
+        }
+        if (!paid) {
+            plugin.getLogger().warning("Could not pay courier " + courier + " for order " + order.id() + "; retrying later.");
+            OrderRepository orders = plugin.orders();
+            if (orders != null) {
+                releaseCourierPayout(orders, order);
+            }
+            return;
+        }
+        notifyOnline(courier, plugin.messages().get("order.courier-paid", TagResolver.resolver(
+                Placeholder.unparsed("title", order.title()),
+                Placeholder.unparsed("shop", order.shopName()),
+                Placeholder.unparsed("amount", money(order.courierAmount())))));
+    }
+
+    private void releaseCourierPayout(OrderRepository orders, ClaimedOrder order) {
+        plugin.dbExecutor().execute(() -> {
+            try {
+                orders.clearCourierPayout(order.id());
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Courier " + order.courierId() + " of order " + order.id() + " was not paid "
+                        + order.courierAmount() + " and the payout could not be queued again. Pay them by hand.", e);
+            }
+        });
+    }
+
+    private String money(BigDecimal amount) {
+        Economy economy = plugin.economy();
+        return economy == null ? amount.toPlainString() : economy.format(amount.doubleValue());
     }
 
     private void releasePayout(OrderRepository orders, ClaimedOrder order) {
@@ -544,7 +662,7 @@ public final class RoleplayController {
             return;
         }
         UUID requesterId = requester.getUniqueId();
-        boolean admin = requester.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(requester);
         TagResolver tags = TagResolver.resolver(Placeholder.unparsed("player", playerName), Placeholder.unparsed("slug", slug));
         plugin.dbExecutor().execute(() -> {
             try {
@@ -569,7 +687,7 @@ public final class RoleplayController {
             return;
         }
         UUID requesterId = requester.getUniqueId();
-        boolean admin = requester.hasPermission("cubezon.admin");
+        boolean admin = Perm.ADMIN_BYPASS.has(requester);
         TagResolver slugTag = Placeholder.unparsed("slug", slug);
         plugin.dbExecutor().execute(() -> {
             try {
@@ -618,8 +736,11 @@ public final class RoleplayController {
     }
 
     private ItemStack packageOf(ShopOrderView view) {
-        return items.packageFor(new RoleplayItems.PackageLabel(view.id(), view.lockerId(), view.lockerName(), view.title()),
-                view.quantity(), plugin.messages());
+        // Express orders carried by hand go to the buyer's mailbox; everything else to the order's locker.
+        RoleplayItems.PackageLabel label = view.toMailbox()
+                ? new RoleplayItems.PackageLabel(view.id(), view.mailboxId(), view.buyerName(), view.title(), true)
+                : new RoleplayItems.PackageLabel(view.id(), view.lockerId(), view.lockerName(), view.title(), false);
+        return items.packageFor(label, view.quantity(), plugin.messages());
     }
 
     private static Component lore(Messages messages, String key, TagResolver... resolvers) {

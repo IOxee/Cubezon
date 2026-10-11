@@ -24,8 +24,11 @@ import java.util.UUID;
  */
 public final class RoleplayItems {
 
-    /** The order a package delivers and where. */
-    public record PackageLabel(UUID orderId, UUID lockerId, String lockerName, String title) {
+    /**
+     * The order a package delivers and where: a locker, or (express with hand delivery) the buyer's mailbox.
+     * {@code targetId} is the locker or mailbox id and {@code targetName} the locker's name or the mailbox owner's.
+     */
+    public record PackageLabel(UUID orderId, UUID targetId, String targetName, String title, boolean mailbox) {
     }
 
     private final Plugin plugin;
@@ -34,6 +37,7 @@ public final class RoleplayItems {
     private final NamespacedKey lockerKey;
     private final NamespacedKey lockerNameKey;
     private final NamespacedKey titleKey;
+    private final NamespacedKey mailboxKey;
 
     public RoleplayItems(Plugin plugin) {
         this.plugin = plugin;
@@ -42,6 +46,7 @@ public final class RoleplayItems {
         this.lockerKey = new NamespacedKey(plugin, "package_locker");
         this.lockerNameKey = new NamespacedKey(plugin, "package_locker_name");
         this.titleKey = new NamespacedKey(plugin, "package_title");
+        this.mailboxKey = new NamespacedKey(plugin, "package_mailbox");
     }
 
     /** config.yml computer.block: any solid block that does not fall; crafter by default. */
@@ -78,19 +83,21 @@ public final class RoleplayItems {
         ItemStack item = new ItemStack(packageMaterial());
         item.editMeta(meta -> {
             var title = Placeholder.unparsed("title", label.title());
-            var locker = Placeholder.unparsed("locker", label.lockerName());
+            var locker = Placeholder.unparsed("locker", label.targetName());
             meta.displayName(messages.plain("computer.package-name", title).decoration(TextDecoration.ITALIC, false));
             meta.lore(List.of(
                     messages.plain("computer.package-lore-1", title,
                             Placeholder.unparsed("quantity", String.valueOf(quantity))).decoration(TextDecoration.ITALIC, false),
-                    messages.plain("computer.package-lore-2", locker).decoration(TextDecoration.ITALIC, false)));
+                    messages.plain(label.mailbox() ? "computer.package-lore-mailbox" : "computer.package-lore-2", locker)
+                            .decoration(TextDecoration.ITALIC, false)));
             meta.setEnchantmentGlintOverride(true);
             meta.setMaxStackSize(1);
             PersistentDataContainer data = meta.getPersistentDataContainer();
             data.set(orderKey, PersistentDataType.STRING, label.orderId().toString());
-            data.set(lockerKey, PersistentDataType.STRING, label.lockerId().toString());
-            data.set(lockerNameKey, PersistentDataType.STRING, label.lockerName());
+            data.set(lockerKey, PersistentDataType.STRING, label.targetId().toString());
+            data.set(lockerNameKey, PersistentDataType.STRING, label.targetName());
             data.set(titleKey, PersistentDataType.STRING, label.title());
+            data.set(mailboxKey, PersistentDataType.BYTE, (byte) (label.mailbox() ? 1 : 0));
         });
         return item;
     }
@@ -108,7 +115,8 @@ public final class RoleplayItems {
         try {
             return Optional.of(new PackageLabel(UUID.fromString(orderId), UUID.fromString(lockerId),
                     data.getOrDefault(lockerNameKey, PersistentDataType.STRING, ""),
-                    data.getOrDefault(titleKey, PersistentDataType.STRING, "")));
+                    data.getOrDefault(titleKey, PersistentDataType.STRING, ""),
+                    data.getOrDefault(mailboxKey, PersistentDataType.BYTE, (byte) 0) == 1));
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }

@@ -1,6 +1,6 @@
 # Messages in MiniMessage format: https://docs.papermc.io/adventure/minimessage/format
 # Version of this file. When the plugin ships a newer one, it replaces the server's copy and keeps a backup of the old one.
-lang-version: 7
+lang-version: 8
 prefix: '<gold>[Cubezon]</gold> '
 help:
   header: '<yellow>Comandos de Cubezon:</yellow>'
@@ -117,6 +117,7 @@ order:
   refunded: '<yellow>Tu pedido <quantity>x «<title>» se ha cancelado: <reason>. Te hemos devuelto el dinero.</yellow>'
   ready-mailbox: '<green>Tu pedido <quantity>x «<title>» ha llegado a tu buzón.</green> <gray>Haz clic derecho en él para recogerlo.</gray>'
   accepted: '<green>«<shop>» ha aceptado tu pedido <quantity>x «<title>»: está en preparación.</green> <gray>Se te ha cobrado; el vendedor recibe el dinero al entregarlo.</gray>'
+  courier-paid: '<green>Has cobrado <amount> de comisión por entregar «<title>» de «<shop>».</green>'
   reason:
     OUT_OF_STOCK: 'no queda stock suficiente'
     LISTING_UNAVAILABLE: 'el producto o la tienda ya no están disponibles'
@@ -153,7 +154,7 @@ computer:
   lore-locker: '<gray>Taquilla:</gray> <white><locker></white>'
   lore-age: '<gray>Hace <age></gray>'
   lore-actions-pending: '<green>Clic izquierdo: aceptar</green> <dark_gray>·</dark_gray> <red>Clic derecho: rechazar</red>'
-  lore-actions-accepted: '<yellow>Clic: imprimir otra vez el paquete</yellow>'
+  lore-actions-accepted: '<yellow>Clic: imprimir el paquete</yellow>'
   package-name: '<gold>Paquete Cubezon</gold> <gray>· <title></gray>'
   package-lore-1: '<gray><quantity>x <title></gray>'
   package-lore-2: '<gray>Entrégalo en la taquilla</gray> <white><locker></white> <gray>(clic derecho).</gray>'
@@ -164,12 +165,16 @@ computer:
   place-failed: '<red>No se pudo registrar el ordenador. Te lo devolvemos.</red>'
   removed: '<yellow>Ordenador retirado de «<shop>».</yellow>'
   break-denied: '<red>Este ordenador es de la tienda «<shop>».</red>'
-  accepted: '<green>Pedido «<title>» aceptado.</green> <gray>Lleva el paquete a la taquilla «<locker>».</gray>'
+  accepted: '<green>Pedido «<title>» aceptado.</green> <gray>Abre el pedido en el ordenador para imprimir el paquete y llévalo a la taquilla «<locker>».</gray>'
   accept-failed: '<red>No se pudo aceptar el pedido: <reason>.</red>'
   accepted-mailbox: '<green>Pedido «<title>» aceptado: ya está en el buzón del cliente.</green>'
   rejected: '<yellow>Pedido «<title>» rechazado.</yellow>'
   order-gone: '<yellow>Ese pedido ya no está pendiente.</yellow>'
   package-reprinted: '<green>Paquete impreso. Llévalo a la taquilla «<locker>».</green>'
+  package-lore-mailbox: '<gray>Entrégalo en el buzón de</gray> <white><locker></white> <gray>(clic derecho).</gray>'
+  wrong-mailbox: '<red>Este paquete va al buzón de <owner>.</red>'
+  delivered-mailbox: '<green>Paquete «<title>» entregado en el buzón de <owner>.</green>'
+  accepted-hand: '<green>Pedido exprés «<title>» aceptado.</green> <gray>Imprime el paquete en el ordenador y entrégalo en el buzón del cliente.</gray>'
   wrong-locker: '<red>Este paquete va a la taquilla «<locker>».</red>'
   package-invalid: '<yellow>Este paquete ya no corresponde a ningún pedido pendiente de entrega.</yellow>'
   delivered: '<green>Paquete «<title>» entregado en «<locker>».</green>'
@@ -256,10 +261,10 @@ panel:
     when: '<white>Hace <age></white>'
     order-id: '<dark_gray>Pedido <order></dark_gray>'
     accept: '<green><bold>✔ Aceptar</bold></green>'
-    accept-hint: '<gray>Se cobra al cliente y se imprime el paquete.</gray>'
+    accept-hint: '<gray>Se cobra al cliente; después podrás imprimir el paquete.</gray>'
     reject: '<red><bold>✖ Rechazar</bold></red>'
     reject-hint: '<gray>Se cancela el pedido sin cobrar nada.</gray>'
-    reprint: '<yellow>Imprimir el paquete otra vez</yellow>'
+    reprint: '<yellow>Imprimir el paquete</yellow>'
     reprint-hint: '<gray>Llévalo a la taquilla del pedido.</gray>'
   listings:
     button: '<aqua>Productos y stock</aqua>'
@@ -350,6 +355,25 @@ panel:
     type-hint: '<yellow>Clic izquierdo: comprar 1 · Clic derecho: elegir cuántos</yellow>'
     buy-computer: '<green>Comprar un ordenador</green>'
     buy-hint: '<gray>Se paga con dinero del juego. Clic izquierdo: 1 · Clic derecho: elegir cuántos</gray>'
+  commission:
+    title: 'Comisión de reparto · <shop_short>'
+    button: '<gold>Comisión de reparto</gold>'
+    current: '<gray>Ahora:</gray> <white><commission></white>'
+    hint: '<gray>Lo cobra el empleado que entrega un paquete y sale de tu venta (como mucho el <max>%).</gray>'
+    owner-only: '<gray>Solo el dueño la cambia.</gray>'
+    NONE: '<white>Sin comisión</white>'
+    PERCENT_TOTAL: '<white>Porcentaje del pedido</white>'
+    PERCENT_EXPRESS: '<white>Porcentaje del envío exprés</white>'
+    FIXED: '<white>Cantidad fija por entrega</white>'
+    selected: '<green>✔ Elegida</green>'
+    choose: '<yellow>Clic para elegirla</yellow>'
+    describe:
+      NONE: 'sin comisión'
+      PERCENT_TOTAL: '<value>% del pedido'
+      PERCENT_EXPRESS: '<value>% del envío exprés'
+      FIXED: '<value> por entrega'
+    saved: '<green>Comisión de reparto: <commission>.</green>'
+    failed: '<red>No se pudo cambiar la comisión (solo el dueño puede).</red>'
 slots:
   show: '<gray><player>:</gray> <white><used>/<slots></white> <gray>tiendas (<free> libres) ·</gray> <origin>'
   set: '<green>Cupo de <player> actualizado: <used>/<slots> tiendas (<free> libres) ·</green> <origin>'
@@ -366,6 +390,8 @@ prompt:
   product-title: '<yellow>Escribe en el chat el nombre del producto (<min>-<max> caracteres), o <white>cancelar</white>.</yellow>'
   product-unit: '<yellow>¿Cuántos objetos van en cada unidad? (1-<max>), o <white>cancelar</white>.</yellow>'
   product-price: '<yellow>Escribe el precio por unidad (por ejemplo 250 o 12,50), o <white>cancelar</white>.</yellow>'
+  commission-percent: '<yellow>Escribe el porcentaje de comisión (1-<max>), o <white>cancelar</white>.</yellow>'
+  commission-fixed: '<yellow>Escribe la comisión por entrega (por ejemplo 25 o 12,50), o <white>cancelar</white>.</yellow>'
   cancelled: '<gray>Cancelado.</gray>'
   expired: '<gray>Has tardado demasiado; vuelve a intentarlo desde el ordenador.</gray>'
 permissions:
@@ -398,6 +424,7 @@ mailbox:
 error:
   economy-missing: '<red>No hay un plugin de economía disponible.</red>'
   database-required: '<red>El mercado no está disponible ahora mismo.</red>'
+  no-admin: '<red>Este comando es solo para administradores.</red>'
 reload:
   done: '<green>Configuración recargada.</green>'
   mode-needs-restart: '<yellow>El modo de pedidos ha cambiado en config.yml, pero solo se aplica al reiniciar el servidor. Sigue activo: <mode>.</yellow>'

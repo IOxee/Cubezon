@@ -1,5 +1,6 @@
 package es.fractalgamestudios.cubezon.database;
 
+import es.fractalgamestudios.cubezon.order.CourierCommission;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -20,7 +21,8 @@ import java.util.UUID;
 public final class ShopPanelRepository {
 
     public record ShopInfo(UUID id, String name, String slug, String status, UUID ownerId, String ownerName,
-                           boolean hasZone, int storageBlocks, int usedUnits, int capacityUnits, int members) {
+                           boolean hasZone, int storageBlocks, int usedUnits, int capacityUnits, int members,
+                           CourierCommission commission) {
     }
 
     public record Member(UUID id, String name, @Nullable UUID roleId, @Nullable String roleName) {
@@ -41,7 +43,8 @@ public final class ShopPanelRepository {
             select s.id, s.name, s.slug, s.status::text as status, s.owner_uuid, p.name as owner_name,
                    s.zone_world is not null as has_zone,
                    st.storage_blocks, st.used_units, st.capacity_units,
-                   (select count(*) from public.shop_members m where m.shop_id = s.id) as members
+                   (select count(*) from public.shop_members m where m.shop_id = s.id) as members,
+                   s.courier_commission_mode, s.courier_commission_value
             from public.shops s
             join public.players p on p.uuid = s.owner_uuid
             join public.shop_storage st on st.shop_id = s.id
@@ -57,6 +60,12 @@ public final class ShopPanelRepository {
             """;
 
     private static final String IS_OWNER = "select owner_uuid = ? from public.shops where id = ?";
+
+    /** Only the owner (or an admin) decides what couriers earn. */
+    private static final String SET_COURIER_COMMISSION = """
+            update public.shops set courier_commission_mode = ?, courier_commission_value = ?
+            where id = ? and (owner_uuid = ? or ?)
+            """;
 
     private static final String ADD_MEMBER = """
             insert into public.shop_members (shop_id, player_uuid, added_by)
@@ -153,8 +162,24 @@ public final class ShopPanelRepository {
                 return Optional.of(new ShopInfo(row.getObject("id", UUID.class), row.getString("name"),
                         row.getString("slug"), row.getString("status"), row.getObject("owner_uuid", UUID.class),
                         row.getString("owner_name"), row.getBoolean("has_zone"), row.getInt("storage_blocks"),
-                        row.getInt("used_units"), row.getInt("capacity_units"), row.getInt("members")));
+                        row.getInt("used_units"), row.getInt("capacity_units"), row.getInt("members"),
+                        CourierCommission.of(row.getString("courier_commission_mode"),
+                                row.getBigDecimal("courier_commission_value"))));
             }
+        }
+    }
+
+    /** False when the requester is not the owner (nor an admin) or the shop is gone. */
+    public boolean setCourierCommission(UUID shopId, UUID requesterId, boolean admin, CourierCommission commission)
+            throws SQLException {
+        try (Connection connection = database.connection();
+             PreparedStatement statement = connection.prepareStatement(SET_COURIER_COMMISSION)) {
+            statement.setString(1, commission.mode().name());
+            statement.setBigDecimal(2, commission.value());
+            statement.setObject(3, shopId);
+            statement.setObject(4, requesterId);
+            statement.setBoolean(5, admin);
+            return statement.executeUpdate() > 0;
         }
     }
 

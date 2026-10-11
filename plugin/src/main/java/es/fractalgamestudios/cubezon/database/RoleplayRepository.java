@@ -62,7 +62,8 @@ public final class RoleplayRepository {
                    o.quantity, o.total, o.created_at, o.paid_at,
                    l.title, l.material, o.buyer_uuid, p.name as buyer_name, k.id as locker_id,
                    coalesce(k.name, '') as locker_name, o.delivery_method,
-                   case when b.id is null then null else b.world || ' ' || b.x || ' ' || b.y || ' ' || b.z end as mailbox_position
+                   case when b.id is null then null else b.world || ' ' || b.x || ' ' || b.y || ' ' || b.z end as mailbox_position,
+                   o.mailbox_id
             from public.orders o
             join public.listings l on l.id = o.listing_id
             join public.players p on p.uuid = o.buyer_uuid
@@ -202,7 +203,8 @@ public final class RoleplayRepository {
                             rows.getObject("created_at", OffsetDateTime.class),
                             rows.getObject("paid_at", OffsetDateTime.class),
                             rows.getString("delivery_method"),
-                            rows.getString("mailbox_position")));
+                            rows.getString("mailbox_position"),
+                            rows.getObject("mailbox_id", UUID.class)));
                 }
             }
             return orders;

@@ -1,7 +1,9 @@
 package es.fractalgamestudios.cubezon.database;
 
 import es.fractalgamestudios.cubezon.order.ClaimedOrder;
+import es.fractalgamestudios.cubezon.order.CourierCommission;
 import es.fractalgamestudios.cubezon.order.FailureReason;
+import es.fractalgamestudios.cubezon.order.OrderDelay;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -39,6 +41,22 @@ public final class OrderRepository {
     public record InterruptedOrder(UUID orderId, UUID buyerId, BigDecimal total) {
     }
 
+    /** Who delivers a package, and {@code maxPercent}: the server cap on their share of the goods. */
+    public record Courier(UUID id, int maxPercent) {
+    }
+
+    /** Columns readOrder needs; every query that returns orders selects them (o = orders, s = shops, l = listings). */
+    private static final String ORDER_COLUMNS = """
+            o.id, o.buyer_uuid, s.owner_uuid as seller_uuid, o.listing_id, l.title,
+            s.name as shop_name, o.quantity, o.total, o.express_fee, o.mailbox_id, o.courier_uuid, o.courier_amount
+            """;
+
+    /** What a delivery also needs to pay its courier; the ? is the courier. */
+    private static final String COURIER_COLUMNS = """
+            , s.courier_commission_mode, s.courier_commission_value,
+            public.shop_member_can(s.id, ?, 'orders.package') as courier_can_carry
+            """;
+
     /**
      * Oldest PENDING order not yet claimed, with what processing needs. SKIP LOCKED so a slow
      * transaction never blocks the queue.
@@ -55,6 +73,7 @@ public final class OrderRepository {
             left join public.lockers k on k.id = o.locker_id
             left join public.mailboxes b on b.id = o.mailbox_id
             where o.status = 'PENDING' and o.processing_started_at is null
+              and o.created_at <= now() - (? + abs(('x' || substr(o.id::text, 1, 8))::bit(32)::bigint) % (? + 1)) * interval '1 second'
             order by o.created_at
             limit 1
             for update of o skip locked
@@ -127,11 +146,25 @@ public final class OrderRepository {
             from public.shops s, public.listings l
             where o.id = ? and o.locker_id = ? and o.status = 'PAID'
               and s.id = o.shop_id and l.id = o.listing_id
-            returning o.id, o.buyer_uuid, s.owner_uuid as seller_uuid, o.listing_id, l.title,
-                      s.name as shop_name, o.quantity, o.total, o.express_fee, o.mailbox_id
+            returning\s""" + ORDER_COLUMNS + COURIER_COLUMNS;
+
+    /** Express order carried by hand (mailbox.express.hand-delivery): same as DELIVER, but at the buyer's mailbox. */
+    private static final String DELIVER_MAILBOX = """
+            update public.orders o set status = 'READY', ready_at = now(), seller_paid_at = now()
+            from public.shops s, public.listings l
+            where o.id = ? and o.mailbox_id = ? and o.delivery_method = 'MAILBOX' and o.status = 'PAID'
+              and s.id = o.shop_id and l.id = o.listing_id
+            returning\s""" + ORDER_COLUMNS + COURIER_COLUMNS;
+
+    /** The courier's share, stored with its payout already claimed (courier_paid_at), in the delivery's transaction. */
+    private static final String SET_COURIER = """
+            update public.orders set courier_uuid = ?, courier_amount = ?, courier_paid_at = now()
+            where id = ? and status = 'READY' and courier_uuid is null
             """;
 
     private static final String CLEAR_PAYOUT = "update public.orders set seller_paid_at = null where id = ?";
+
+    private static final String CLEAR_COURIER_PAYOUT = "update public.orders set courier_paid_at = null where id = ?";
 
     /** Payouts a failed deposit left pending; claimed before paying, like DELIVER. */
     private static final String CLAIM_PAYOUTS = """
@@ -139,9 +172,15 @@ public final class OrderRepository {
             from public.shops s, public.listings l
             where s.id = o.shop_id and l.id = o.listing_id
               and o.status in ('READY', 'COLLECTED') and o.seller_paid_at is null and o.paid_at is not null
-            returning o.id, o.buyer_uuid, s.owner_uuid as seller_uuid, o.listing_id, l.title,
-                      s.name as shop_name, o.quantity, o.total, o.express_fee, o.mailbox_id
-            """;
+            returning\s""" + ORDER_COLUMNS;
+
+    /** Courier commissions a failed deposit left pending; claimed before paying. */
+    private static final String CLAIM_COURIER_PAYOUTS = """
+            update public.orders o set courier_paid_at = now()
+            from public.shops s, public.listings l
+            where s.id = o.shop_id and l.id = o.listing_id
+              and o.status in ('READY', 'COLLECTED') and o.courier_amount > 0 and o.courier_paid_at is null
+            returning\s""" + ORDER_COLUMNS;
 
     private static final String EXPIRE_PENDING = """
             update public.orders o set status = 'FAILED', failure_reason = 'EXPIRED'
@@ -149,13 +188,9 @@ public final class OrderRepository {
             where s.id = o.shop_id and l.id = o.listing_id
               and o.status = 'PENDING' and o.processing_started_at is null
               and o.created_at < now() - ? * interval '1 hour'
-            returning o.id, o.buyer_uuid, s.owner_uuid as seller_uuid, o.listing_id, l.title,
-                      s.name as shop_name, o.quantity, o.total, o.express_fee, o.mailbox_id
-            """;
+            returning\s""" + ORDER_COLUMNS;
 
-    private static final String SELECT_EXPIRED_ACCEPTED = """
-            select o.id, o.buyer_uuid, s.owner_uuid as seller_uuid, o.listing_id, l.title,
-                   s.name as shop_name, o.quantity, o.total, o.express_fee, o.mailbox_id
+    private static final String SELECT_EXPIRED_ACCEPTED = "select " + ORDER_COLUMNS + """
             from public.orders o
             join public.shops s on s.id = o.shop_id
             join public.listings l on l.id = o.listing_id
@@ -184,8 +219,12 @@ public final class OrderRepository {
      * AVAILABLE units and checks each one with {@code validItem}. Anything wrong fails the order
      * in the same transaction, before any money moves.
      */
-    public ClaimResult claimNext(Predicate<byte[]> validItem) throws SQLException {
-        return claim(SELECT_NEXT, statement -> { }, validItem);
+    public ClaimResult claimNext(Predicate<byte[]> validItem, OrderDelay delay) throws SQLException {
+        // Only orders that have already waited their own delay (between min and max, derived from the order id).
+        return claim(SELECT_NEXT, statement -> {
+            statement.setInt(1, delay.minSeconds());
+            statement.setInt(2, delay.rangeSeconds());
+        }, validItem);
     }
 
     /** Roleplay: the shop accepts one of its PENDING orders. Same checks and reservation as claimNext. */
@@ -370,18 +409,69 @@ public final class OrderRepository {
     }
 
     /**
-     * Roleplay delivery of a package at a locker: PAID -> READY, payout claimed. Empty if the
-     * order is not PAID or belongs to another locker.
+     * Roleplay delivery of a package at a locker: PAID -> READY, seller payout claimed and, if the shop
+     * pays one, the courier's commission stored and claimed too. Empty if the order is not PAID or
+     * belongs to another locker.
      */
-    public Optional<ClaimedOrder> deliver(UUID orderId, UUID lockerId, String lockerName) throws SQLException {
-        try (Connection connection = database.connection();
-             PreparedStatement statement = connection.prepareStatement(DELIVER)) {
-            statement.setObject(1, orderId);
-            statement.setObject(2, lockerId);
-            try (ResultSet row = statement.executeQuery()) {
-                return row.next() ? Optional.of(readOrder(row, lockerName)) : Optional.empty();
+    public Optional<ClaimedOrder> deliver(UUID orderId, UUID lockerId, String lockerName, Courier courier)
+            throws SQLException {
+        return deliverAt(DELIVER, orderId, lockerId, lockerName, courier);
+    }
+
+    /** Roleplay, hand-delivered express order: a PAID order delivered at its own mailbox becomes READY. */
+    public Optional<ClaimedOrder> deliverToMailbox(UUID orderId, UUID mailboxId, Courier courier) throws SQLException {
+        return deliverAt(DELIVER_MAILBOX, orderId, mailboxId, "", courier);
+    }
+
+    private Optional<ClaimedOrder> deliverAt(String sql, UUID orderId, UUID targetId, String lockerName, Courier courier)
+            throws SQLException {
+        try (Connection connection = database.connection()) {
+            connection.setAutoCommit(false);
+            try {
+                Optional<ClaimedOrder> delivered = markDelivered(connection, sql, orderId, targetId, lockerName, courier);
+                connection.commit();
+                return delivered;
+            } catch (SQLException | RuntimeException e) {
+                connection.rollback();
+                throw e;
             }
         }
+    }
+
+    /** Inside the delivery's transaction: READY, then the courier's share if they earn one. */
+    private static Optional<ClaimedOrder> markDelivered(Connection connection, String sql, UUID orderId, UUID targetId,
+                                                       String lockerName, Courier courier) throws SQLException {
+        ClaimedOrder order;
+        CourierCommission commission;
+        boolean canCarry;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setObject(1, orderId);
+            statement.setObject(2, targetId);
+            statement.setObject(3, courier.id());
+            try (ResultSet row = statement.executeQuery()) {
+                if (!row.next()) {
+                    return Optional.empty();
+                }
+                order = readOrder(row, lockerName);
+                commission = CourierCommission.of(row.getString("courier_commission_mode"),
+                        row.getBigDecimal("courier_commission_value"));
+                canCarry = row.getBoolean("courier_can_carry");
+            }
+        }
+        if (!CourierCommission.paysCourier(order, courier.id(), canCarry)) {
+            return Optional.of(order);
+        }
+        BigDecimal amount = commission.amountFor(order.total(), order.expressFee(), courier.maxPercent());
+        if (amount.signum() <= 0) {
+            return Optional.of(order);
+        }
+        try (PreparedStatement update = connection.prepareStatement(SET_COURIER)) {
+            update.setObject(1, courier.id());
+            update.setBigDecimal(2, amount);
+            update.setObject(3, orderId);
+            update.executeUpdate();
+        }
+        return Optional.of(order.withCourier(courier.id(), amount));
     }
 
     /** The payout failed: forget the claim so it is retried. */
@@ -389,9 +479,19 @@ public final class OrderRepository {
         update(CLEAR_PAYOUT, orderId);
     }
 
+    /** The courier's payout failed: forget the claim so it is retried. */
+    public void clearCourierPayout(UUID orderId) throws SQLException {
+        update(CLEAR_COURIER_PAYOUT, orderId);
+    }
+
     /** Claims every payout left pending by a failed deposit. The caller pays each seller. */
     public List<ClaimedOrder> claimPendingPayouts() throws SQLException {
         return returningOrders(CLAIM_PAYOUTS, null);
+    }
+
+    /** Claims every courier commission left pending by a failed deposit. The caller pays each courier. */
+    public List<ClaimedOrder> claimPendingCourierPayouts() throws SQLException {
+        return returningOrders(CLAIM_COURIER_PAYOUTS, null);
     }
 
     /** Roleplay: PENDING orders nobody accepted in time -> FAILED / EXPIRED (nothing was charged). */
@@ -464,7 +564,9 @@ public final class OrderRepository {
                 row.getInt("quantity"),
                 row.getBigDecimal("total"),
                 row.getBigDecimal("express_fee"),
-                row.getObject("mailbox_id", UUID.class));
+                row.getObject("mailbox_id", UUID.class),
+                row.getObject("courier_uuid", UUID.class),
+                row.getBigDecimal("courier_amount"));
     }
 
     /**
