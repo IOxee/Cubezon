@@ -80,6 +80,15 @@ computer:
       I: iron_ingot
       R: redstone
       C: crafter
+  # Delivery terminal (roleplay): a second kind of computer that only prints the packages of accepted
+  # orders. It is bought from the shop's computer (Storage section), belongs to that shop and can be
+  # placed outside its zone (never in another shop's zone) by the owner or staff who may print packages.
+  delivery:
+    # Block of the terminal (solid, not affected by gravity). Already placed terminals keep working.
+    block: cartography_table
+    buy:
+      enabled: true
+      price: 1500.0
 
 # Items from other plugins and mods. Each listing is identified by a namespaced key
 # (minecraft:diamond, nexo:ruby, itemsadder:pack:ruby, mmoitems:SWORD:FIRE_SWORD,

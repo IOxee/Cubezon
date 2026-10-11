@@ -14,6 +14,7 @@ import { ReviewList } from "@/components/catalog/review-list";
 import { BlockSkeleton } from "@/components/catalog/skeletons";
 import { BuyBox } from "@/components/shopping/buy-box";
 import { ItemIcon } from "@/components/ui/item-icon";
+import { ListingVisual } from "@/components/catalog/listing-visual";
 import { Price } from "@/components/ui/price";
 import { Rating } from "@/components/ui/rating";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -35,7 +36,7 @@ function ProductGallery({ item }: { item: CatalogItem }) {
   return (
     <div className="card relative" style={inkStyle(item.shop.ink)}>
       <div className="squares relative flex aspect-square items-center justify-center" aria-label={m.catalog.product.gallery}>
-        <ItemIcon material={item.material} size={160} alt={fmt(m.a11y.itemIcon, { name: itemName(item.material) })} />
+        <ListingVisual item={item} iconSize={160} iconAlt={fmt(m.a11y.itemIcon, { name: itemName(item.material) })} />
         <span className="num absolute top-2 right-3 text-xs text-ink-3">{fmt(m.common.serial, { serial: serialOf(item.id) })}</span>
         {item.unitAmount > 1 ? (
           <span className="badge badge-paper absolute bottom-2 left-3 text-sm">

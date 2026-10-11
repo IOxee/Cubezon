@@ -3,7 +3,7 @@ import { fmt, m } from "@/i18n";
 import type { CatalogItem } from "@/lib/data/catalog";
 import { serialOf } from "@/lib/format";
 import { inkStyle } from "@/lib/inks";
-import { ItemIcon } from "@/components/ui/item-icon";
+import { ListingVisual } from "@/components/catalog/listing-visual";
 import { Price } from "@/components/ui/price";
 import { Rating } from "@/components/ui/rating";
 import { Stamp } from "@/components/ui/stamp";
@@ -14,7 +14,7 @@ export function ProductCard({ item }: { item: CatalogItem }) {
   return (
     <article className="lift card relative flex flex-col" style={inkStyle(item.shop.ink)}>
       <div className="squares relative flex aspect-[4/3] items-center justify-center">
-        <ItemIcon material={item.material} size={64} />
+        <ListingVisual item={item} iconSize={64} />
         <span className="num absolute top-1.5 right-2 text-xs text-ink-3">{serialOf(item.id)}</span>
         {item.unitAmount > 1 ? (
           <span className="badge badge-paper absolute bottom-1.5 left-2">{fmt(m.product.unitShort, { count: item.unitAmount })}</span>

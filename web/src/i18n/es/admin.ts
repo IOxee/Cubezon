@@ -17,6 +17,8 @@ export const admin = {
     team: "Equipo",
     players: "Jugadores",
     themes: "Temas",
+    features: "Funciones",
+    photos: "Fotos",
   },
 
   /** Values of the ?estado= query parameter (visible in the URL). */
@@ -469,5 +471,66 @@ export const admin = {
       title: "Todavía no hay jugadores",
       body: "Aparecerán aquí en cuanto entren al servidor.",
     },
+  },
+
+  /** /admin/funciones: plugin options changed from the web (feature_settings). Superadmin only. */
+  features: {
+    title: "Funciones del servidor",
+    intro:
+      "Activa, desactiva o cambia funciones del plugin sin tocar config.yml. Un campo vacío usa lo que diga config.yml. El servidor aplica los cambios en su siguiente actualización (un minuto como mucho).",
+    inForce: "Ahora en el servidor: {value}",
+    unknown: "sin datos",
+    yes: "sí",
+    no: "no",
+    fromFile: "Usar config.yml",
+    on: "Activado",
+    off: "Desactivado",
+    overridden: "Cambiado desde la web",
+    publishedAt: "El servidor publicó sus valores el {date}.",
+    neverPublished: "El servidor aún no ha publicado sus valores: actualiza el plugin o revisa su base de datos.",
+    save: "Guardar cambios",
+    saving: "Guardando…",
+    saved: "Guardado. El servidor lo aplicará en su siguiente actualización.",
+    groups: {
+      purchases: "Compras en el juego",
+      express: "Envío exprés al buzón",
+      orders: "Pedidos",
+    },
+    options: {
+      "storage.buy.enabled": { label: "Comprar almacenes", hint: "Con dinero del juego, por comando, ordenador o Tienda Cubezon." },
+      "computer.buy.enabled": { label: "Comprar ordenadores de empresa", hint: "El ordenador completo de cada tienda." },
+      "computer.buy.price": { label: "Precio del ordenador", hint: "Dinero del juego por unidad." },
+      "computer.delivery.buy.enabled": { label: "Comprar terminales de reparto", hint: "Se compran desde el ordenador de la tienda." },
+      "computer.delivery.buy.price": { label: "Precio de la terminal de reparto", hint: "Dinero del juego por unidad." },
+      "mailbox.buy.enabled": { label: "Comprar buzones", hint: "Buzones personales para el envío exprés." },
+      "mailbox.buy.price": { label: "Precio del buzón", hint: "Dinero del juego por unidad." },
+      "mailbox.max-per-player": { label: "Buzones por jugador", hint: "De 0 a 20." },
+      "mailbox.express.enabled": { label: "Envío exprés", hint: "Que los compradores puedan recibir en su buzón." },
+      "mailbox.express.fee": { label: "Suplemento exprés", hint: "Lo paga el comprador por cada compra exprés." },
+      "mailbox.express.fee-to-seller": { label: "El suplemento es para el vendedor", hint: "Si no, se lo queda el servidor." },
+      "mailbox.express.hand-delivery": { label: "Exprés entregado a mano (roleplay)", hint: "Un empleado lleva el paquete al buzón del comprador." },
+      "orders.automatic.delay-min-minutes": { label: "Retraso mínimo (automático)", hint: "Minutos antes de procesar un pedido, de 0 a 1440." },
+      "orders.automatic.delay-max-minutes": { label: "Retraso máximo (automático)", hint: "Minutos, de 0 a 1440. 0 y 0 = al momento." },
+      "orders.roleplay.courier-max-percent": { label: "Comisión máxima del repartidor", hint: "Porcentaje de la mercancía, de 0 a 100." },
+    },
+    errors: {
+      invalid: "Revisa estos campos: {fields}.",
+      delays: "El retraso mínimo no puede ser mayor que el máximo.",
+    },
+  },
+
+  /** /admin/fotos: product photos, newest first; an admin can take any of them down. */
+  photos: {
+    title: "Fotos de productos",
+    intro: "Las suben el dueño o los empleados con permiso de productos. Si alguna no es adecuada, quítala: el producto vuelve a mostrar su icono.",
+    results: { zero: "Ninguna foto", one: "{count} foto", other: "{count} fotos" },
+    by: "{shop} · subida el {date}",
+    view: "Ver producto",
+    remove: "Quitar foto",
+    removing: "Quitando…",
+    confirm: "¿Quitar esta foto? El vendedor podrá subir otra.",
+    removed: "Foto quitada.",
+    gone: "Esa foto ya no estaba.",
+    empty: { title: "No hay fotos", body: "Aparecerán aquí cuando los vendedores las suban." },
   },
 } as const;

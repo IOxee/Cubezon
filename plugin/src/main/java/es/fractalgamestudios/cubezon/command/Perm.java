@@ -30,7 +30,7 @@ public enum Perm {
     ADMIN_RELOAD("cubezon.admin.reload", true),
     /** The server owner's feature panel. */
     ADMIN_PANEL("cubezon.admin.panel", true),
-    /** Placing and breaking the Cubezon shop terminals. */
+    /** Creating and removing «Tienda Cubezon» kiosks (/cz kiosk). */
     ADMIN_TERMINAL("cubezon.admin.terminal", true),
     /** Works on any shop as if it were the owner: computers, orders, stock, staff. */
     ADMIN_BYPASS("cubezon.admin.bypass", true);

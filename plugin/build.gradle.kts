@@ -69,8 +69,14 @@ tasks {
     register<Copy>("deployToServer") {
         group = "cubezon"
         description = "Builds the plugin and copies it into the local test server."
+        val pluginsDir = rootDir.resolve("../../server/plugins")
         from(shadowJar)
-        into(rootDir.resolve("../../server/plugins"))
-        rename { "Cubezon.jar" }
+        into(pluginsDir)
+        rename { "Cubezon-${project.version}.jar" }
+        doFirst {
+            // Paper must load a single Cubezon: drop the previous jar (Cubezon.jar or Cubezon-<version>.jar).
+            pluginsDir.listFiles { file -> file.isFile && file.name.matches(Regex("Cubezon(-[0-9.]+)?\\.jar")) }
+                ?.forEach { old -> check(old.delete()) { "Cannot delete ${old.name}: stop the server first." } }
+        }
     }
 }

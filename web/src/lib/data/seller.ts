@@ -20,6 +20,7 @@ import { SHOP_PERMISSIONS, type ShopPermission, type StaffActor } from "@/lib/se
 import { isShopSlotsExceeded } from "@/lib/seller/shops";
 import { EMPTY_STORAGE, zoneFromColumns, type ShopZone, type StorageFigures } from "@/lib/seller/storage";
 import { isValidSlug, type ListingInput, type ShopInput } from "@/lib/seller/validation";
+import { LISTING_PHOTOS_BUCKET } from "@/lib/listing-photos";
 import { SHOP_MEDIA_BUCKET, type ShopMediaKind } from "@/lib/shop-media";
 import { adminDb, dbError } from "@/lib/supabase/server";
 
@@ -67,6 +68,8 @@ export type SellerListing = Inventory & {
   unitPrice: number;
   status: ListingStatus;
   createdAt: string;
+  /** Photo in the listing-photos bucket, or null (the item icon is shown). */
+  photoPath: string | null;
 };
 
 export type SellerOrder = {
@@ -378,6 +381,45 @@ export async function deleteShopMedia(paths: string[]): Promise<void> {
   if (error) throw dbError(error);
 }
 
+// Product photos (bucket listing-photos)
+
+/**
+ * Sets (or with null removes) the photo of a listing of that shop, only if it still is
+ * {@code previous}: two uploads at once never lose track of a file. False if it changed meanwhile
+ * or the listing is gone or REMOVED.
+ */
+export async function replaceListingPhoto(
+  shopId: string,
+  listingId: string,
+  previous: string | null,
+  next: string | null,
+): Promise<boolean> {
+  let query = adminDb()
+    .from("listings")
+    .update({ photo_path: next, photo_updated_at: next === null ? null : new Date().toISOString() })
+    .eq("id", listingId)
+    .eq("shop_id", shopId)
+    .neq("status", "REMOVED");
+  query = previous === null ? query.is("photo_path", null) : query.eq("photo_path", previous);
+  const { data, error } = await query.select("id");
+  if (error) throw dbError(error);
+  return data.length > 0;
+}
+
+/** Uploads a checked image (validateShopImage) to the public bucket. Paths are never reused. */
+export async function uploadListingPhoto(path: string, bytes: Uint8Array, contentType: string): Promise<void> {
+  const { error } = await adminDb()
+    .storage.from(LISTING_PHOTOS_BUCKET)
+    .upload(path, bytes, { contentType, upsert: false, cacheControl: "31536000" });
+  if (error) throw dbError(error);
+}
+
+export async function deleteListingPhotos(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  const { error } = await adminDb().storage.from(LISTING_PHOTOS_BUCKET).remove(paths);
+  if (error) throw dbError(error);
+}
+
 // Storage (private view shop_storage: blocks placed in the zone, capacity and units in use)
 
 /** Storage of the given shops (all of them the player's), keyed by shop id. */
@@ -406,7 +448,7 @@ export async function getShopStorage(shopId: string): Promise<StorageFigures> {
 
 // Listings and stock
 
-const LISTING_COLUMNS = "id, title, description, material, item_key, unit_amount, unit_price, status, created_at";
+const LISTING_COLUMNS = "id, title, description, material, item_key, unit_amount, unit_price, status, created_at, photo_path";
 
 type ListingRow = {
   id: string;
@@ -418,6 +460,7 @@ type ListingRow = {
   unit_price: number;
   status: ListingStatus;
   created_at: string;
+  photo_path: string | null;
 };
 
 function toListing(row: ListingRow, inventory: Inventory | undefined): SellerListing {
@@ -431,6 +474,7 @@ function toListing(row: ListingRow, inventory: Inventory | undefined): SellerLis
     unitPrice: Number(row.unit_price),
     status: row.status,
     createdAt: row.created_at,
+    photoPath: row.photo_path,
     ...(inventory ?? EMPTY_INVENTORY),
   };
 }

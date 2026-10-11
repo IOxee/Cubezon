@@ -6,6 +6,8 @@ import es.fractalgamestudios.cubezon.database.CustomItemRepository;
 import es.fractalgamestudios.cubezon.database.Database;
 import es.fractalgamestudios.cubezon.database.EscrowRepository;
 import es.fractalgamestudios.cubezon.database.ListingRepository;
+import es.fractalgamestudios.cubezon.database.FeatureRepository;
+import es.fractalgamestudios.cubezon.database.KioskRepository;
 import es.fractalgamestudios.cubezon.database.MailboxRepository;
 import es.fractalgamestudios.cubezon.database.OrderRepository;
 import es.fractalgamestudios.cubezon.database.PickupRepository;
@@ -37,6 +39,10 @@ import es.fractalgamestudios.cubezon.locker.LockerListener;
 import es.fractalgamestudios.cubezon.locker.LockerRegistry;
 import es.fractalgamestudios.cubezon.mailbox.MailboxController;
 import es.fractalgamestudios.cubezon.mailbox.MailboxListener;
+import es.fractalgamestudios.cubezon.kiosk.KioskController;
+import es.fractalgamestudios.cubezon.kiosk.KioskListener;
+import es.fractalgamestudios.cubezon.kiosk.KioskRegistry;
+import es.fractalgamestudios.cubezon.settings.FeatureController;
 import es.fractalgamestudios.cubezon.order.OrderMode;
 import es.fractalgamestudios.cubezon.order.OrderProcessor;
 import es.fractalgamestudios.cubezon.pickup.PickupController;
@@ -83,6 +89,8 @@ public final class CubezonPlugin extends JavaPlugin {
     private Sounds sounds;
     private MenuLayout menuLayout;
     private MailboxController mailboxController;
+    private KioskController kioskController;
+    private FeatureController featureController;
     private ItemIdentity itemIdentity;
     /** Read once at startup: switching modes needs a restart (orders in flight would mix both flows). */
     private OrderMode orderMode = OrderMode.AUTOMATIC;
@@ -101,6 +109,8 @@ public final class CubezonPlugin extends JavaPlugin {
     private @Nullable ShopSlotsRepository shopSlots;
     private @Nullable RoleRepository roles;
     private @Nullable MailboxRepository mailboxes;
+    private @Nullable KioskRepository kiosks;
+    private @Nullable FeatureRepository features;
     private @Nullable Economy economy;
 
     @Override
@@ -125,6 +135,9 @@ public final class CubezonPlugin extends JavaPlugin {
         shopSlotsController = new ShopSlotsController(this);
         shopSlotsController.publishDefault();
         mailboxController = new MailboxController(this);
+        kioskController = new KioskController(this, new KioskRegistry());
+        featureController = new FeatureController(this);
+        featureController.snapshotFile();
         mailboxController.itemShop().registerRecipe();
         mailboxController.publishSettings();
         roleplayController.itemShop().registerRecipe();
@@ -140,6 +153,7 @@ public final class CubezonPlugin extends JavaPlugin {
         pluginManager.registerEvents(new StorageListener(storageController, this::messages), this);
         pluginManager.registerEvents(new PickupMenuListener(this, pickupController), this);
         pluginManager.registerEvents(new MailboxListener(mailboxController), this);
+        pluginManager.registerEvents(new KioskListener(kioskController, this::messages), this);
         pluginManager.registerEvents(new RoleplayListener(this, roleplayController, lockerController.registry()), this);
         // Intervals in config.yml settings (read at startup).
         long jobsTicks = 20L * Math.clamp(getConfig().getLong("settings.order-jobs-seconds", 60), 10, 3600);
@@ -201,6 +215,7 @@ public final class CubezonPlugin extends JavaPlugin {
     public boolean reload() {
         reloadConfig();
         updateConfigFile();
+        featureController.snapshotFile();
         menuLayout.reload();
         messages.reload();
         loadItemIdentity();
@@ -227,6 +242,8 @@ public final class CubezonPlugin extends JavaPlugin {
         storageController.refresh();
         roleplayController.refresh();
         mailboxController.refresh();
+        kioskController.refresh();
+        featureController.refresh();
     }
 
     private void loadSettings() {
@@ -245,6 +262,8 @@ public final class CubezonPlugin extends JavaPlugin {
         shopSlots = database == null ? null : new ShopSlotsRepository(database);
         roles = database == null ? null : new RoleRepository(database);
         mailboxes = database == null ? null : new MailboxRepository(database);
+        kiosks = database == null ? null : new KioskRepository(database);
+        features = database == null ? null : new FeatureRepository(database);
 
         LinkCodeStore linkStore;
         if (database != null) {
@@ -275,6 +294,8 @@ public final class CubezonPlugin extends JavaPlugin {
             shopSlots = null;
             roles = null;
             mailboxes = null;
+            kiosks = null;
+            features = null;
         }
     }
 
@@ -392,6 +413,18 @@ public final class CubezonPlugin extends JavaPlugin {
 
     public @Nullable MailboxRepository mailboxes() {
         return mailboxes;
+    }
+
+    public @Nullable KioskRepository kiosks() {
+        return kiosks;
+    }
+
+    public KioskController kioskController() {
+        return kioskController;
+    }
+
+    public @Nullable FeatureRepository features() {
+        return features;
     }
 
     public @Nullable RoleRepository roles() {

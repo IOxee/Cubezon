@@ -30,11 +30,13 @@ async function AdminShell({ children }: { children: ReactNode }) {
     { href: "/admin/tiendas", label: m.admin.nav.shops, segment: "tiendas" },
     { href: "/admin/pedidos", label: m.admin.nav.orders, segment: "pedidos" },
     { href: "/admin/taquillas", label: m.admin.nav.lockers, segment: "taquillas" },
+    { href: "/admin/fotos", label: m.admin.nav.photos, segment: "fotos" },
   ];
   if (staff.role === "SUPERADMIN") {
     items.push({ href: "/admin/equipo", label: m.admin.nav.team, segment: "equipo" });
     items.push({ href: "/admin/jugadores", label: m.admin.nav.players, segment: "jugadores" });
     items.push({ href: "/admin/temas", label: m.admin.nav.themes, segment: "temas" });
+    items.push({ href: "/admin/funciones", label: m.admin.nav.features, segment: "funciones" });
   }
 
   return (

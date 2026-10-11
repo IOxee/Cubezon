@@ -12,6 +12,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -47,10 +49,35 @@ public final class RoleplayListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
-        ComputerBlock computer = controller.registry().at(BlockPosition.of(event.getBlock()));
+        BlockPosition position = BlockPosition.of(event.getBlock());
+        if (controller.isPending(position)) {
+            event.setCancelled(true); // Still being registered: breaking it now could leave a ghost or a spare item.
+            return;
+        }
+        ComputerBlock computer = controller.registry().at(position);
         if (computer != null) {
             controller.handleBreak(event, computer);
         }
+    }
+
+    /** A pushed computer would leave its registration behind on an empty block. */
+    @EventHandler(ignoreCancelled = true)
+    public void onPistonExtend(BlockPistonExtendEvent event) {
+        if (movesComputer(event.getBlocks())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPistonRetract(BlockPistonRetractEvent event) {
+        if (movesComputer(event.getBlocks())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean movesComputer(List<Block> blocks) {
+        return blocks.stream().map(BlockPosition::of)
+                .anyMatch(position -> controller.registry().at(position) != null || controller.isPending(position));
     }
 
     /**

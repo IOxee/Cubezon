@@ -36,6 +36,8 @@ export type CatalogItem = {
   /** Name and icon of a custom item (custom_items), when the listing sells one. */
   customName: string | null;
   customIconPath: string | null;
+  /** Photo uploaded by the shop (listing-photos bucket); null shows the item icon. */
+  photoPath: string | null;
 };
 
 export type Locker = { id: string; name: string; world: string; x: number; y: number; z: number };
@@ -57,7 +59,7 @@ export type CatalogQuery = {
 type CatalogRow = Omit<Database["public"]["Views"]["catalog"]["Row"], "search_text" | "updated_at">;
 
 const COLUMNS =
-  "id, title, description, material, category, unit_amount, unit_price, price_per_item, created_at, shop_id, shop_slug, shop_name, shop_ink, shop_official, units_available, units_sold, rating_avg, rating_count, item_key, match_mode, custom_name, custom_icon_path";
+  "id, title, description, material, category, unit_amount, unit_price, price_per_item, created_at, shop_id, shop_slug, shop_name, shop_ink, shop_official, units_available, units_sold, rating_avg, rating_count, item_key, match_mode, custom_name, custom_icon_path, photo_path";
 
 function toItem(row: CatalogRow): CatalogItem {
   return {
@@ -85,6 +87,7 @@ function toItem(row: CatalogRow): CatalogItem {
     matchMode: row.match_mode === "EXACT" ? "EXACT" : "KEY",
     customName: row.custom_name,
     customIconPath: row.custom_icon_path,
+    photoPath: row.photo_path,
   };
 }
 

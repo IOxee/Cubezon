@@ -31,8 +31,14 @@ public final class RoleplayItems {
     public record PackageLabel(UUID orderId, UUID targetId, String targetName, String title, boolean mailbox) {
     }
 
+    /** The shop a delivery terminal item belongs to. */
+    public record TerminalShop(UUID shopId, String shopName) {
+    }
+
     private final Plugin plugin;
     private final NamespacedKey computerKey;
+    private final NamespacedKey terminalShopKey;
+    private final NamespacedKey terminalShopNameKey;
     private final NamespacedKey orderKey;
     private final NamespacedKey lockerKey;
     private final NamespacedKey lockerNameKey;
@@ -42,6 +48,8 @@ public final class RoleplayItems {
     public RoleplayItems(Plugin plugin) {
         this.plugin = plugin;
         this.computerKey = new NamespacedKey(plugin, "company_computer");
+        this.terminalShopKey = new NamespacedKey(plugin, "terminal_shop");
+        this.terminalShopNameKey = new NamespacedKey(plugin, "terminal_shop_name");
         this.orderKey = new NamespacedKey(plugin, "package_order");
         this.lockerKey = new NamespacedKey(plugin, "package_locker");
         this.lockerNameKey = new NamespacedKey(plugin, "package_locker_name");
@@ -74,9 +82,54 @@ public final class RoleplayItems {
         return item;
     }
 
+    /** config.yml computer.delivery.block, with the same rules as computer.block; cartography table by default. */
+    public Material terminalBlock() {
+        Material material = Material.matchMaterial(plugin.getConfig().getString("computer.delivery.block", "cartography_table"));
+        return material != null && material.isBlock() && material.isItem() && material.isSolid() && !material.hasGravity()
+                ? material : Material.CARTOGRAPHY_TABLE;
+    }
+
+    /** A delivery terminal of one shop: it only prints that shop's packages, and may stand outside its zone. */
+    public ItemStack deliveryTerminal(int amount, TerminalShop shop, Messages messages) {
+        ItemStack item = new ItemStack(terminalBlock(), amount);
+        item.editMeta(meta -> {
+            var shopTag = Placeholder.unparsed("shop", shop.shopName());
+            meta.displayName(messages.plain("computer.delivery.item-name", shopTag).decoration(TextDecoration.ITALIC, false));
+            meta.lore(List.of(
+                    messages.plain("computer.delivery.item-lore-1", shopTag).decoration(TextDecoration.ITALIC, false),
+                    messages.plain("computer.delivery.item-lore-2", shopTag).decoration(TextDecoration.ITALIC, false)));
+            PersistentDataContainer data = meta.getPersistentDataContainer();
+            data.set(terminalShopKey, PersistentDataType.STRING, shop.shopId().toString());
+            data.set(terminalShopNameKey, PersistentDataType.STRING, shop.shopName());
+        });
+        return item;
+    }
+
+    /** The full computer or a delivery terminal. */
     public boolean isComputer(@Nullable ItemStack item) {
-        return item != null && item.hasItemMeta()
-                && item.getItemMeta().getPersistentDataContainer().has(computerKey, PersistentDataType.BYTE);
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+        PersistentDataContainer data = item.getItemMeta().getPersistentDataContainer();
+        return data.has(computerKey, PersistentDataType.BYTE) || data.has(terminalShopKey, PersistentDataType.STRING);
+    }
+
+    /** The shop of a delivery terminal item; empty for the full computer or anything else. */
+    public Optional<TerminalShop> terminalShop(@Nullable ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return Optional.empty();
+        }
+        PersistentDataContainer data = item.getItemMeta().getPersistentDataContainer();
+        String shopId = data.get(terminalShopKey, PersistentDataType.STRING);
+        if (shopId == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(new TerminalShop(UUID.fromString(shopId),
+                    data.getOrDefault(terminalShopNameKey, PersistentDataType.STRING, "")));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     public ItemStack packageFor(PackageLabel label, int quantity, Messages messages) {

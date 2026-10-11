@@ -106,8 +106,16 @@ public final class ComputerPanel {
                         Placeholder.unparsed("shop", computer.shopName())));
                 return;
             }
-            showMain(player, new Context(computer, access.shop(), admin || access.shop().ownerId().equals(playerId),
-                    access.permissions()));
+            Context context = new Context(computer, access.shop(), admin || access.shop().ownerId().equals(playerId),
+                    access.permissions());
+            if (computer.kind().managesShop()) {
+                showMain(player, context);
+            } else if (plugin.orderMode() == OrderMode.ROLEPLAY && context.can(ShopPermission.ORDERS_PACKAGE)) {
+                showOrders(player, context);
+            } else {
+                player.sendMessage(plugin.messages().get("computer.delivery.cannot-use",
+                        Placeholder.unparsed("shop", computer.shopName())));
+            }
         });
     }
 
@@ -215,9 +223,12 @@ public final class ComputerPanel {
         if (roleplay == null) {
             return;
         }
-        async(player, () -> roleplay.findShopOrders(context.computer().shopId(), LIST_SLOTS), list -> {
+        boolean terminal = !context.computer().kind().managesShop();
+        async(player, () -> roleplay.findShopOrders(context.computer().shopId(), LIST_SLOTS), all -> {
+            // A delivery terminal only prints packages: it lists the accepted orders.
+            List<ShopOrderView> list = terminal ? all.stream().filter(ShopOrderView::accepted).toList() : all;
             Messages messages = plugin.messages();
-            Gui gui = new Gui(plugin.getServer(), 6, messages.plain("panel.titles.orders",
+            Gui gui = new Gui(plugin.getServer(), 6, messages.plain(terminal ? "panel.titles.delivery" : "panel.titles.orders",
                     shopTags(context.shop()), Placeholder.unparsed("count", String.valueOf(list.size()))));
             for (int slot = 0; slot < list.size(); slot++) {
                 ShopOrderView order = list.get(slot);
@@ -269,7 +280,7 @@ public final class ComputerPanel {
                 : Icons.decorate(menu.icon("orderDecision.locker", Material.ENDER_CHEST), messages, "panel.decision.locker",
                         List.of("panel.decision.locker-position"), tags));
         gui.set(menu.slot("orderDecision.decision-when", 24), Icons.decorate(menu.icon("orderDecision.decision-when", Material.CLOCK), messages, "panel.decision.when", List.of("panel.decision.order-id"), tags));
-        if (order.awaitingDecision() && context.can(ShopPermission.ORDERS_DECIDE)) {
+        if (order.awaitingDecision() && context.computer().kind().managesShop() && context.can(ShopPermission.ORDERS_DECIDE)) {
             gui.set(menu.slot("orderDecision.decision-accept", 38), Icons.decorate(menu.icon("orderDecision.decision-accept", Material.LIME_CONCRETE), messages, "panel.decision.accept", List.of("panel.decision.accept-hint"), tags),
                     (p, click) -> orders.accept(p, context.computer(), order));
             gui.set(menu.slot("orderDecision.decision-reject", 42), Icons.decorate(menu.icon("orderDecision.decision-reject", Material.RED_CONCRETE), messages, "panel.decision.reject", List.of("panel.decision.reject-hint"), tags),
@@ -766,11 +777,31 @@ public final class ComputerPanel {
                         plugin.roleplayController().buy(p, 1);
                     }
                 });
+        if (context.can(ShopPermission.STORAGE_BUY) && plugin.orderMode() == OrderMode.ROLEPLAY) {
+            var shop = new RoleplayItems.TerminalShop(context.shop().id(), context.shop().name());
+            gui.set(menu.slot("storage.storage-buy-terminal", 32), Icons.decorate(menu.icon("storage.storage-buy-terminal",
+                            plugin.roleplayController().items().terminalBlock()), messages, "panel.storage.buy-terminal",
+                            List.of("panel.storage.buy-terminal-hint", "panel.storage.buy-hint")),
+                    (p, click) -> {
+                        if (isRight(click)) {
+                            plugin.chatPrompt().askAmount(p, "prompt.buy", maxPurchase(),
+                                    amount -> plugin.roleplayController().buyTerminal(p, shop, amount));
+                        } else {
+                            plugin.roleplayController().buyTerminal(p, shop, 1);
+                        }
+                    });
+        }
         gui.set(menu.slot("storage.back", 27), Icons.decorate(menu.icon("storage.back", Material.ARROW), messages, "panel.back", List.of()), (p, click) -> open(p, context.computer()));
         gui.fill(menu.filler()).open(player);
     }
 
+    /** Back to the main screen; a delivery terminal has none, so there it closes. */
     private void back(Gui gui, Context context) {
+        if (!context.computer().kind().managesShop()) {
+            gui.set(menu.slot("common.back", BACK_SLOT), Icons.decorate(menu.icon("main.close", Material.BARRIER), plugin.messages(), "panel.close", List.of()),
+                    (p, click) -> p.closeInventory());
+            return;
+        }
         gui.set(menu.slot("common.back", BACK_SLOT), Icons.decorate(menu.icon("common.back", Material.ARROW), plugin.messages(), "panel.back", List.of()),
                 (p, click) -> open(p, context.computer()));
     }

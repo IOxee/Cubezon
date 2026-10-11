@@ -196,6 +196,7 @@ export const catalog = {
   media: {
     logoAlt: "Logo de {name}",
     bannerAlt: "Portada de {name}",
+    photoAlt: "Foto de {title}",
   },
 
   lockers: {

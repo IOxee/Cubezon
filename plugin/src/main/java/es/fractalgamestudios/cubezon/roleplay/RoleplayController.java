@@ -62,6 +62,8 @@ public final class RoleplayController {
     private final ComputerRegistry registry = new ComputerRegistry();
     private final RoleplayItems items;
     private final SpecialItemShop itemShop;
+    /** Computers placed but not yet registered in the database (see handlePlace). */
+    private final Set<BlockPosition> pendingPlacements = ConcurrentHashMap.newKeySet();
     /** Orders with an accept, reject or delivery in flight: double clicks cannot race. */
     private final Set<UUID> busyOrders = ConcurrentHashMap.newKeySet();
     /** Computers whose removal is in flight, so a double break cannot drop two items. */
@@ -187,8 +189,14 @@ public final class RoleplayController {
         notifyBuyerFailed(order, FailureReason.DELIVERY_EXPIRED);
     }
 
+    /**
+     * A full computer goes inside its shop's zone and only the owner places it. A delivery terminal
+     * goes anywhere except another shop's zone; its shop's owner or anyone there with orders.package
+     * places it (checked in the database, so the block is taken back if they may not).
+     */
     public void handlePlace(BlockPlaceEvent event) {
-        if (!items.isComputer(event.getItemInHand())) {
+        ItemStack hand = event.getItemInHand();
+        if (!items.isComputer(hand)) {
             return;
         }
         Messages messages = plugin.messages();
@@ -201,36 +209,83 @@ public final class RoleplayController {
         }
         BlockPosition position = BlockPosition.of(event.getBlockPlaced());
         ShopZone zone = plugin.storageController().registry().zoneAt(position).orElse(null);
-        if (zone == null) {
+        RoleplayItems.TerminalShop terminal = items.terminalShop(hand).orElse(null);
+        ComputerKind kind = terminal == null ? ComputerKind.FULL : ComputerKind.DELIVERY;
+        ComputerKind.Placement placement = kind.placement(zone == null ? null : zone.shopId(),
+                terminal == null ? null : terminal.shopId());
+        if (placement != ComputerKind.Placement.OK) {
             event.setCancelled(true);
-            player.sendMessage(messages.get("computer.outside-zone"));
+            player.sendMessage(placement == ComputerKind.Placement.OTHER_SHOP_ZONE && zone != null
+                    ? messages.get("computer.delivery.other-zone", Placeholder.unparsed("shop", zone.shopName()))
+                    : messages.get("computer.outside-zone"));
             return;
         }
-        if (!zone.ownerId().equals(player.getUniqueId()) && !Perm.ADMIN_BYPASS.has(player)) {
+        UUID playerId = player.getUniqueId();
+        boolean admin = Perm.ADMIN_BYPASS.has(player);
+        if (kind == ComputerKind.FULL && !zone.ownerId().equals(playerId) && !admin) {
             event.setCancelled(true);
             player.sendMessage(messages.get("storage.not-yours", Placeholder.unparsed("shop", zone.shopName())));
             return;
         }
-        UUID playerId = player.getUniqueId();
-        Material placedType = event.getBlockPlaced().getType();
+        UUID shopId = terminal == null ? zone.shopId() : terminal.shopId();
+        String shopName = terminal == null ? zone.shopName() : terminal.shopName();
+        TagResolver shopTag = Placeholder.unparsed("shop", shopName);
+        Placed placed = new Placed(player, position, event.getBlockPlaced().getType(), hand.asOne());
+        pendingPlacements.add(position);
         plugin.dbExecutor().execute(() -> {
             try {
-                registry.put(roleplay.insertComputer(zone, position, playerId));
-                player.sendMessage(messages.get("computer.placed", Placeholder.unparsed("shop", zone.shopName())));
+                if (kind == ComputerKind.DELIVERY && !admin
+                        && !roleplay.can(shopId, playerId, ShopPermission.ORDERS_PACKAGE.key())) {
+                    undoPlacement(placed, messages.get("computer.delivery.not-staff", shopTag));
+                    return;
+                }
+                registry.put(roleplay.insertComputer(shopId, shopName, position, playerId, kind));
+                pendingPlacements.remove(position);
+                player.sendMessage(messages.get(kind == ComputerKind.FULL ? "computer.placed" : "computer.delivery.placed", shopTag));
             } catch (SQLException e) {
                 plugin.getLogger().log(Level.WARNING, "Could not register the computer at " + position, e);
-                runOnMainThread(() -> {
-                    Block placed = blockAt(position);
-                    if (placed != null && placed.getType() == placedType) {
-                        placed.setType(Material.AIR);
-                    }
-                    if (player.isOnline()) {
-                        SpecialItemShop.giveOrDrop(player, items.computer(1, messages));
-                        player.sendMessage(messages.get("computer.place-failed"));
-                    }
-                });
+                undoPlacement(placed, messages.get("computer.place-failed"));
             }
         });
+    }
+
+    /** A computer still being registered: it cannot be broken or pushed until the database answers. */
+    public boolean isPending(BlockPosition position) {
+        return pendingPlacements.contains(position);
+    }
+
+    /** A computer block just placed, and the item to give back if it cannot stay. */
+    private record Placed(Player player, BlockPosition position, Material type, ItemStack item) {
+    }
+
+    /**
+     * Database thread. Takes the block back and returns the item (dropped there if the player left).
+     * The item only comes back if the block was really taken back: never a block and an item.
+     */
+    private void undoPlacement(Placed placed, Component message) {
+        runOnMainThread(() -> {
+            pendingPlacements.remove(placed.position());
+            Block block = blockAt(placed.position());
+            if (block == null || block.getType() != placed.type()) {
+                plugin.getLogger().warning("Computer at " + placed.position() + " was not registered and its block is gone;"
+                        + " nothing returned to " + placed.player().getName() + ".");
+                return;
+            }
+            block.setType(Material.AIR);
+            if (placed.player().isOnline()) {
+                SpecialItemShop.giveOrDrop(placed.player(), placed.item());
+                placed.player().sendMessage(message);
+            } else {
+                block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), placed.item());
+            }
+        });
+    }
+
+    /** The item a placed computer turns back into when broken. */
+    private ItemStack itemOf(ComputerBlock computer) {
+        return computer.kind() == ComputerKind.FULL
+                ? items.computer(1, plugin.messages())
+                : items.deliveryTerminal(1, new RoleplayItems.TerminalShop(computer.shopId(), computer.shopName()), plugin.messages());
     }
 
     public void handleBreak(BlockBreakEvent event, ComputerBlock computer) {
@@ -238,10 +293,11 @@ public final class RoleplayController {
         Messages messages = plugin.messages();
         Player player = event.getPlayer();
         TagResolver shopTag = Placeholder.unparsed("shop", computer.shopName());
-        boolean owner = plugin.storageController().registry().zoneOf(computer.shopId())
+        boolean trusted = Perm.ADMIN_BYPASS.has(player) || plugin.storageController().registry().zoneOf(computer.shopId())
                 .map(zone -> zone.ownerId().equals(player.getUniqueId()))
                 .orElse(false);
-        if (!owner && !Perm.ADMIN_BYPASS.has(player)) {
+        // The full computer: owner or admin. A delivery terminal: also whoever may carry packages there.
+        if (!trusted && computer.kind() == ComputerKind.FULL) {
             player.sendMessage(messages.get("computer.break-denied", shopTag));
             return;
         }
@@ -249,8 +305,14 @@ public final class RoleplayController {
         if (roleplay == null || !breaking.add(computer.id())) {
             return;
         }
+        UUID playerId = player.getUniqueId();
         plugin.dbExecutor().execute(() -> {
             try {
+                if (!trusted && !roleplay.can(computer.shopId(), playerId, ShopPermission.ORDERS_PACKAGE.key())) {
+                    breaking.remove(computer.id());
+                    player.sendMessage(messages.get("computer.break-denied", shopTag));
+                    return;
+                }
                 boolean deleted = roleplay.deleteComputer(computer.id());
                 registry.remove(computer.id());
                 runOnMainThread(() -> {
@@ -264,8 +326,7 @@ public final class RoleplayController {
                             container.getInventory().clear();
                         }
                         block.setType(Material.AIR);
-                        block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5),
-                                items.computer(1, messages));
+                        block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), itemOf(computer));
                     }
                     player.sendMessage(messages.get("computer.removed", shopTag));
                 });
@@ -290,6 +351,9 @@ public final class RoleplayController {
     }
 
     void accept(Player player, ComputerBlock computer, ShopOrderView view) {
+        if (!computer.kind().managesShop()) {
+            return; // Delivery terminals only print packages.
+        }
         Messages messages = plugin.messages();
         OrderRepository orders = plugin.orders();
         Economy economy = plugin.economy();
@@ -390,6 +454,9 @@ public final class RoleplayController {
     }
 
     void reject(Player player, ComputerBlock computer, ShopOrderView view, Runnable then) {
+        if (!computer.kind().managesShop()) {
+            return; // Delivery terminals only print packages.
+        }
         Messages messages = plugin.messages();
         OrderRepository orders = plugin.orders();
         if (orders == null) {
@@ -805,5 +872,11 @@ public final class RoleplayController {
 
     public void give(CommandSender sender, Player target, int amount) {
         itemShop.give(sender, target, amount);
+    }
+
+    /** Main thread. Delivery terminals of one shop, bought from its full computer (computer.delivery.buy). */
+    public void buyTerminal(Player player, RoleplayItems.TerminalShop shop, int amount) {
+        new SpecialItemShop(plugin, "computer.delivery", "computer.delivery", "delivery_terminal",
+                count -> items.deliveryTerminal(count, shop, plugin.messages())).buy(player, amount);
     }
 }

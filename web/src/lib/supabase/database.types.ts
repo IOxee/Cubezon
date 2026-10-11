@@ -130,6 +130,27 @@ export type Database = {
           },
         ]
       }
+      feature_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       inks: {
         Row: {
           created_at: string
@@ -197,6 +218,8 @@ export type Database = {
           item_key: string
           match_mode: string
           material: string
+          photo_path: string | null
+          photo_updated_at: string | null
           sample: string | null
           sample_set_at: string | null
           shop_id: string
@@ -213,6 +236,8 @@ export type Database = {
           item_key: string
           match_mode?: string
           material: string
+          photo_path?: string | null
+          photo_updated_at?: string | null
           sample?: string | null
           sample_set_at?: string | null
           shop_id: string
@@ -229,6 +254,8 @@ export type Database = {
           item_key?: string
           match_mode?: string
           material?: string
+          photo_path?: string | null
+          photo_updated_at?: string | null
           sample?: string | null
           sample_set_at?: string | null
           shop_id?: string
@@ -379,6 +406,9 @@ export type Database = {
         Row: {
           buyer_uuid: string
           collected_at: string | null
+          courier_amount: number
+          courier_paid_at: string | null
+          courier_uuid: string | null
           created_at: string
           delivery_method: string
           express_fee: number
@@ -401,6 +431,9 @@ export type Database = {
         Insert: {
           buyer_uuid: string
           collected_at?: string | null
+          courier_amount?: number
+          courier_paid_at?: string | null
+          courier_uuid?: string | null
           created_at?: string
           delivery_method?: string
           express_fee?: number
@@ -423,6 +456,9 @@ export type Database = {
         Update: {
           buyer_uuid?: string
           collected_at?: string | null
+          courier_amount?: number
+          courier_paid_at?: string | null
+          courier_uuid?: string | null
           created_at?: string
           delivery_method?: string
           express_fee?: number
@@ -675,6 +711,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          kind: string
           placed_by: string
           shop_id: string
           world: string
@@ -685,6 +722,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          kind?: string
           placed_by: string
           shop_id: string
           world: string
@@ -695,6 +733,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          kind?: string
           placed_by?: string
           shop_id?: string
           world?: string
@@ -926,6 +965,8 @@ export type Database = {
       shops: {
         Row: {
           banner_path: string | null
+          courier_commission_mode: string
+          courier_commission_value: number
           created_at: string
           description: string
           featured_listing_ids: string[]
@@ -953,6 +994,8 @@ export type Database = {
         }
         Insert: {
           banner_path?: string | null
+          courier_commission_mode?: string
+          courier_commission_value?: number
           created_at?: string
           description?: string
           featured_listing_ids?: string[]
@@ -980,6 +1023,8 @@ export type Database = {
         }
         Update: {
           banner_path?: string | null
+          courier_commission_mode?: string
+          courier_commission_value?: number
           created_at?: string
           description?: string
           featured_listing_ids?: string[]
@@ -1283,6 +1328,7 @@ export type Database = {
           item_key: string | null
           match_mode: string | null
           material: string | null
+          photo_path: string | null
           price_per_item: number | null
           rating_avg: number | null
           rating_count: number | null

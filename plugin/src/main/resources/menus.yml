@@ -210,9 +210,28 @@ storage:
   storage-buy-computer:
     slot: 31
     material: crafter
+  # No material: the delivery terminal's own block (config.yml computer.delivery.block).
+  storage-buy-terminal:
+    slot: 32
   back:
     slot: 27
     material: arrow
+
+# Tienda Cubezon (kiosk, /cz kiosk create). Storage types fill slots from storage-start up to 17.
+kiosk:
+  info:
+    slot: 4
+    material: emerald
+  storage-start:
+    slot: 9
+  # No material: the computer and mailbox use their own blocks.
+  computer:
+    slot: 21
+  mailbox:
+    slot: 23
+  close:
+    slot: 31
+    material: barrier
 
 # Shared by every menu
 common:

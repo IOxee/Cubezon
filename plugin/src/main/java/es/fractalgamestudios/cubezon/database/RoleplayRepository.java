@@ -2,8 +2,8 @@ package es.fractalgamestudios.cubezon.database;
 
 import es.fractalgamestudios.cubezon.locker.BlockPosition;
 import es.fractalgamestudios.cubezon.roleplay.ComputerBlock;
+import es.fractalgamestudios.cubezon.roleplay.ComputerKind;
 import es.fractalgamestudios.cubezon.roleplay.ShopOrderView;
-import es.fractalgamestudios.cubezon.storage.ShopZone;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -37,14 +37,14 @@ public final class RoleplayRepository {
             """;
 
     private static final String FIND_COMPUTERS = """
-            select c.id, c.shop_id, s.name as shop_name, c.world, c.x, c.y, c.z
+            select c.id, c.shop_id, s.name as shop_name, c.world, c.x, c.y, c.z, c.kind
             from public.shop_computers c
             join public.shops s on s.id = c.shop_id
             """;
 
     private static final String INSERT_COMPUTER = """
-            insert into public.shop_computers (shop_id, world, x, y, z, placed_by)
-            values (?, ?, ?, ?, ?, ?)
+            insert into public.shop_computers (shop_id, world, x, y, z, placed_by, kind)
+            values (?, ?, ?, ?, ?, ?, ?)
             returning id
             """;
 
@@ -118,24 +118,27 @@ public final class RoleplayRepository {
             while (rows.next()) {
                 computers.add(new ComputerBlock(rows.getObject("id", UUID.class), rows.getObject("shop_id", UUID.class),
                         rows.getString("shop_name"),
-                        new BlockPosition(rows.getString("world"), rows.getInt("x"), rows.getInt("y"), rows.getInt("z"))));
+                        new BlockPosition(rows.getString("world"), rows.getInt("x"), rows.getInt("y"), rows.getInt("z")),
+                        ComputerKind.parse(rows.getString("kind"))));
             }
             return computers;
         }
     }
 
-    public ComputerBlock insertComputer(ShopZone zone, BlockPosition position, UUID placedBy) throws SQLException {
+    public ComputerBlock insertComputer(UUID shopId, String shopName, BlockPosition position, UUID placedBy,
+                                        ComputerKind kind) throws SQLException {
         try (Connection connection = database.connection();
              PreparedStatement statement = connection.prepareStatement(INSERT_COMPUTER)) {
-            statement.setObject(1, zone.shopId());
+            statement.setObject(1, shopId);
             statement.setString(2, position.world());
             statement.setInt(3, position.x());
             statement.setInt(4, position.y());
             statement.setInt(5, position.z());
             statement.setObject(6, placedBy);
+            statement.setString(7, kind.name());
             try (ResultSet row = statement.executeQuery()) {
                 row.next();
-                return new ComputerBlock(row.getObject("id", UUID.class), zone.shopId(), zone.shopName(), position);
+                return new ComputerBlock(row.getObject("id", UUID.class), shopId, shopName, position, kind);
             }
         }
     }

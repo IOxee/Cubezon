@@ -15,6 +15,9 @@ import { ListingForm } from "../_components/listing-form";
 import { RestoreAction } from "../_components/restore-action";
 import { itemInputValue } from "@/lib/seller/validation";
 import { saveListingAction } from "../actions";
+import { listingPhotoAction } from "../photo-actions";
+import { ListingPhotoForm } from "@/components/seller/listing-photo-form";
+import { listingPhotoUrl } from "@/lib/listing-photos";
 
 export const metadata: Metadata = { title: m.seller.meta.editListing };
 
@@ -82,6 +85,16 @@ async function EditListing({ params, searchParams }: Pick<Props, "params" | "sea
         ) : null}
       </div>
       <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+        {editable ? (
+          <div className="card p-4">
+            <ListingPhotoForm
+              action={listingPhotoAction.bind(null, shop.slug, listing.id)}
+              currentUrl={listingPhotoUrl(listing.photoPath)}
+              title={listing.title}
+              material={listing.material}
+            />
+          </div>
+        ) : null}
         <InventoryCard listing={listing} />
         {editable ? (
           <DepositHelp material={listing.material} unitAmount={listing.unitAmount} approved={shop.status === "APPROVED"} />

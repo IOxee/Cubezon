@@ -72,7 +72,7 @@ permissions:
     description: Abrir el panel de funciones del servidor.
     default: op
   cubezon.admin.terminal:
-    description: Colocar y romper terminales de la tienda Cubezon.
+    description: Crear y quitar Tiendas Cubezon (/cz kiosk).
     default: op
   cubezon.admin.bypass:
     description: Gestionar cualquier tienda como si fuera su dueño.

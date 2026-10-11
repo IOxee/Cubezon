@@ -59,11 +59,29 @@ public final class CubezonCommand {
                 .then(storageCommand("storage", "buy", "give", "type", "create", "remove", "list"))
                 .then(shopCommand("shop"))
                 .then(lockerCommand("locker", "create", "remove", "list"))
+                .then(kioskCommand())
                 .then(Commands.literal("reload")
                         .requires(source -> Perm.ADMIN_RELOAD.has(source.getSender()))
                         .executes(guard(Perm.ADMIN_RELOAD, this::reload)));
 
         commands.register(root.build(), "Cubezon marketplace", List.of("cz"));
+    }
+
+    /** «Tienda Cubezon» kiosks (admin): create and remove on the block looked at, list all. */
+    private LiteralArgumentBuilder<CommandSourceStack> kioskCommand() {
+        return Commands.literal("kiosk")
+                .requires(source -> Perm.ADMIN_TERMINAL.has(source.getSender()))
+                .then(Commands.literal("create")
+                        .executes(guard(Perm.ADMIN_TERMINAL, context -> withPlayer(context,
+                                player -> plugin.kioskController().create(player)))))
+                .then(Commands.literal("remove")
+                        .executes(guard(Perm.ADMIN_TERMINAL, context -> withPlayer(context,
+                                player -> plugin.kioskController().remove(player)))))
+                .then(Commands.literal("list")
+                        .executes(guard(Perm.ADMIN_TERMINAL, context -> {
+                            plugin.kioskController().list(context.getSource().getSender());
+                            return Command.SINGLE_SUCCESS;
+                        })));
     }
 
     /** Item in hand: its key (anyone) or registering it in the web catalog (admin). */
@@ -374,6 +392,7 @@ public final class CubezonCommand {
             sender.sendMessage(messages.plain("help.shop-slots"));
             sender.sendMessage(messages.plain("help.storage-give"));
             sender.sendMessage(messages.plain("help.locker"));
+            sender.sendMessage(messages.plain("help.kiosk"));
             sender.sendMessage(messages.plain("help.reload"));
         }
         return Command.SINGLE_SUCCESS;
