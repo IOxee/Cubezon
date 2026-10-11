@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: m.admin.themes.title };
 
 const t = m.admin.themes;
 
-export default function EditThemePage(props: PageProps<"/admin/temas/[id]">) {
+export default function EditThemePage(props: PageProps<"/admin/themes/[id]">) {
   return (
     <Suspense fallback={<TableSkeleton rows={6} />}>
       <EditTheme params={props.params} searchParams={props.searchParams} />
@@ -31,8 +31,8 @@ async function EditTheme({
   params,
   searchParams,
 }: {
-  params: PageProps<"/admin/temas/[id]">["params"];
-  searchParams: PageProps<"/admin/temas/[id]">["searchParams"];
+  params: PageProps<"/admin/themes/[id]">["params"];
+  searchParams: PageProps<"/admin/themes/[id]">["searchParams"];
 }) {
   await requireStaff("SUPERADMIN");
   const [{ id }, query] = await Promise.all([params, searchParams]);
@@ -44,7 +44,7 @@ async function EditTheme({
     <>
       <AdminPageHeader title={fmt(t.editTitle, { name: theme.name })} intro={t.intro}>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/admin/temas" className="link text-sm">
+          <Link href="/admin/themes" className="link text-sm">
             {t.back}
           </Link>
           {theme.isActive ? (
@@ -64,7 +64,7 @@ async function EditTheme({
         </div>
       </AdminPageHeader>
 
-      {query.aviso === "creado" ? (
+      {query.notice === "created" ? (
         <Notice tone="success" className="mb-4">
           {t.done.created}
         </Notice>

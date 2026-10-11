@@ -19,7 +19,7 @@ export default function NotFound() {
         <Link href="/" className="btn btn-primary">
           {t.home}
         </Link>
-        <Link href="/buscar" className="btn">
+        <Link href="/search" className="btn">
           {m.nav.all}
         </Link>
       </div>

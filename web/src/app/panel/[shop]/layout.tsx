@@ -8,7 +8,7 @@ import { ShopSidebar, ShopSidebarSkeleton } from "./_components/shop-sidebar";
  * and every page await the slug and the session behind their own <Suspense>, and every page
  * loads the shop by slug and owner itself (requireSellerShop), so nobody reaches someone else's.
  */
-export default function ShopPanelLayout({ children, params }: LayoutProps<"/panel/[tienda]">) {
+export default function ShopPanelLayout({ children, params }: LayoutProps<"/panel/[shop]">) {
   return (
     <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-4 lg:self-start">

@@ -21,24 +21,6 @@ export const admin = {
     photos: "Fotos",
   },
 
-  /** Values of the ?estado= query parameter (visible in the URL). */
-  slugs: {
-    shop: {
-      PENDING: "pendientes",
-      APPROVED: "aprobadas",
-      REJECTED: "rechazadas",
-      SUSPENDED: "suspendidas",
-    },
-    order: {
-      PENDING: "pendiente",
-      PAID: "pagado",
-      READY: "en-taquilla",
-      COLLECTED: "recogido",
-      FAILED: "fallido",
-      REFUNDED: "reembolsado",
-    },
-  },
-
   pagination: {
     label: "Páginas",
     prev: "Anterior",
@@ -397,7 +379,7 @@ export const admin = {
     },
   },
 
-  /** /admin/jugadores (superadmin): shop slots of each player. */
+  /** /admin/players (superadmin): shop slots of each player. */
   players: {
     title: "Jugadores",
     intro: "Cuántas tiendas puede tener cada jugador. Las solicitudes rechazadas no ocupan cupo.",
@@ -473,19 +455,21 @@ export const admin = {
     },
   },
 
-  /** /admin/funciones: plugin options changed from the web (feature_settings). Superadmin only. */
+  /** /admin/features: plugin options changed from the web (feature_settings). Superadmin only. */
   features: {
     title: "Funciones del servidor",
     intro:
       "Activa, desactiva o cambia funciones del plugin sin tocar config.yml. Un campo vacío usa lo que diga config.yml. El servidor aplica los cambios en su siguiente actualización (un minuto como mucho).",
-    inForce: "Ahora en el servidor: {value}",
-    unknown: "sin datos",
     yes: "sí",
     no: "no",
-    fromFile: "Usar config.yml",
+    byDefault: "Por defecto",
+    byDefaultValue: "Por defecto ({value})",
     on: "Activado",
     off: "Desactivado",
-    overridden: "Cambiado desde la web",
+    overridden: "Cambiado",
+    pending: "Pendiente",
+    pendingHint: "El servidor lo aplicará en su siguiente actualización (un minuto como mucho).",
+    inForce: "Ahora en el servidor: {value}",
     publishedAt: "El servidor publicó sus valores el {date}.",
     neverPublished: "El servidor aún no ha publicado sus valores: actualiza el plugin o revisa su base de datos.",
     save: "Guardar cambios",
@@ -519,7 +503,7 @@ export const admin = {
     },
   },
 
-  /** /admin/fotos: product photos, newest first; an admin can take any of them down. */
+  /** /admin/photos: product photos, newest first; an admin can take any of them down. */
   photos: {
     title: "Fotos de productos",
     intro: "Las suben el dueño o los empleados con permiso de productos. Si alguna no es adecuada, quítala: el producto vuelve a mostrar su icono.",

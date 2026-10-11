@@ -1,5 +1,5 @@
 /**
- * Spanish texts: seller area (opening shops at /vender, "Mis tiendas" at /panel and the panel of
+ * Spanish texts: seller area (opening shops at /sell, "Mis tiendas" at /panel and the panel of
  * each shop at /panel/<slug>). Shared commands come from m.commands and are filled in with fmt().
  */
 export const seller = {
@@ -145,13 +145,13 @@ export const seller = {
     saved: "Cambios guardados.",
   },
 
-  /** Shop settings page (/panel/<slug>/tienda): its sections. */
+  /** Shop settings page (/panel/<slug>/shop): its sections. */
   settings: {
     details: "Datos de la tienda",
     detailsLead: "Puedes cambiar el nombre y el enlace cuando quieras: no hace falta otra revisión.",
   },
 
-  /** Public profile of a shop (/panel/<slug>/tienda): images, tagline, featured listings, location. */
+  /** Public profile of a shop (/panel/<slug>/shop): images, tagline, featured listings, location. */
   profile: {
     title: "Perfil público",
     lead: "Lo que ven los compradores en tu escaparate y en el directorio de tiendas.",
@@ -419,14 +419,14 @@ export const seller = {
     caption: "Pedidos de tu tienda",
     filterLabel: "Filtrar por estado",
     filters: {
-      all: { label: "Todos", slug: "" },
-      open: { label: "En curso", slug: "en-curso" },
-      PENDING: { label: "Pendientes", slug: "pendientes" },
-      PAID: { label: "Pagados", slug: "pagados" },
-      READY: { label: "En taquilla", slug: "en-taquilla" },
-      COLLECTED: { label: "Recogidos", slug: "recogidos" },
-      FAILED: { label: "Fallidos o cancelados", slug: "fallidos" },
-      REFUNDED: { label: "Reembolsados", slug: "reembolsados" },
+      all: { label: "Todos" },
+      open: { label: "En curso" },
+      PENDING: { label: "Pendientes" },
+      PAID: { label: "Pagados" },
+      READY: { label: "En taquilla" },
+      COLLECTED: { label: "Recogidos" },
+      FAILED: { label: "Fallidos o cancelados" },
+      REFUNDED: { label: "Reembolsados" },
     },
     columns: {
       number: "Pedido",

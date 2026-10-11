@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { addToCartAction, type AddToCartState } from "@/app/carrito/actions";
+import { addToCartAction, type AddToCartState } from "@/app/cart/actions";
 import { fmt, m, plural } from "@/i18n";
 import { MAX_UNITS_PER_LINE, lineTotalCents, maxUnits } from "@/lib/cart";
 import type { CatalogItem, Locker } from "@/lib/data/catalog";
@@ -84,7 +84,7 @@ export function BuyBox({ item, lockers }: { item: CatalogItem; lockers: Locker[]
             {t.addToCart}
           </SubmitButton>
           <Link
-            href={`/caja?producto=${item.id}&unidades=${units}`}
+            href={`/checkout?product=${item.id}&units=${units}`}
             className="btn btn-ink btn-lg btn-block"
             prefetch={false}
           >
@@ -94,7 +94,7 @@ export function BuyBox({ item, lockers }: { item: CatalogItem; lockers: Locker[]
           {result?.status === "added" ? (
             <Notice tone="success">
               <p>{plural(result.units, t.added)}</p>
-              <Link href="/carrito" className="link mt-1 inline-block font-semibold">
+              <Link href="/cart" className="link mt-1 inline-block font-semibold">
                 {t.viewCart}
               </Link>
             </Notice>
@@ -110,7 +110,7 @@ export function BuyBox({ item, lockers }: { item: CatalogItem; lockers: Locker[]
           <dt className="label">{t.pickupTitle}</dt>
           <dd className={lockers.length === 0 ? "text-danger" : "text-ink-2"}>
             {plural(lockers.length, t.pickup)}{" "}
-            <Link href="/taquillas" className="link text-ink">
+            <Link href="/lockers" className="link text-ink">
               {t.lockersLink}
             </Link>
           </dd>

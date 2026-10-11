@@ -112,7 +112,7 @@ export const roleplay = {
     },
   },
 
-  /** Employees page of one shop (/panel/<slug>/empleados). */
+  /** Employees page of one shop (/panel/<slug>/staff). */
   employees: {
     metaTitle: "Empleados de tu tienda",
     title: "Empleados",

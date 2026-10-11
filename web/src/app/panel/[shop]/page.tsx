@@ -35,14 +35,14 @@ const RECENT_ORDERS = 5;
 const LOW_STOCK_ITEMS = 6;
 const NEW_LISTING_CLASS = "btn btn-primary btn-sm";
 
-export default function ShopOverviewPage({ params }: PageProps<"/panel/[tienda]">) {
+export default function ShopOverviewPage({ params }: PageProps<"/panel/[shop]">) {
   return (
     <>
       <PanelHeader
         title={m.seller.overview.title}
         action={
           <Suspense fallback={<ShopPanelLinkFallback className={NEW_LISTING_CLASS}>{m.seller.listings.new}</ShopPanelLinkFallback>}>
-            <ShopPanelLink params={params} segments={["productos", "nuevo"]} permission="products.manage" className={NEW_LISTING_CLASS}>
+            <ShopPanelLink params={params} segments={["products", "new"]} permission="products.manage" className={NEW_LISTING_CLASS}>
               {m.seller.listings.new}
             </ShopPanelLink>
           </Suspense>
@@ -55,9 +55,9 @@ export default function ShopOverviewPage({ params }: PageProps<"/panel/[tienda]"
   );
 }
 
-async function Overview({ params }: { params: PageProps<"/panel/[tienda]">["params"] }) {
-  const { tienda } = await params;
-  const { shop } = await requireSellerShop(tienda, panelPath(tienda));
+async function Overview({ params }: { params: PageProps<"/panel/[shop]">["params"] }) {
+  const { shop: shopSlug } = await params;
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug));
   const [listings, sales, recent, storage, { mode, computer }] = await Promise.all([
     getShopListings(shop.id),
     getShopSales(shop.id),
@@ -93,7 +93,7 @@ async function Overview({ params }: { params: PageProps<"/panel/[tienda]">["para
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <section>
-          <SectionHeader title={m.seller.overview.recentOrders} href={panelPath(shop.slug, "pedidos")} />
+          <SectionHeader title={m.seller.overview.recentOrders} href={panelPath(shop.slug, "orders")} />
           {recent.orders.length > 0 ? (
             <OrdersTable orders={recent.orders} caption={m.seller.overview.recentOrders} mode={mode} />
           ) : (
@@ -140,7 +140,7 @@ function ShopStatusPanel({ shop }: { shop: PanelShop }) {
         </Link>
       ) : null}
       {shop.status === "REJECTED" && shop.role === "owner" ? (
-        <Link href={`/vender#tienda-${shop.slug}`} className="btn btn-sm mt-3">
+        <Link href={`/sell#shop-${shop.slug}`} className="btn btn-sm mt-3">
           {m.seller.overview.fixRequest}
         </Link>
       ) : null}
@@ -176,7 +176,7 @@ function ComputerCard({ shop, computers, employees }: { shop: PanelShop; compute
       </p>
       <p className="mt-2 text-sm text-ink-2">{plural(employees, t.employees)}</p>
       {shop.role === "owner" ? (
-        <Link href={panelPath(shop.slug, "empleados")} className="btn btn-sm mt-3">
+        <Link href={panelPath(shop.slug, "staff")} className="btn btn-sm mt-3">
           {t.manageEmployees}
         </Link>
       ) : null}
@@ -205,7 +205,7 @@ function LowStock({ shop, listings }: { shop: SellerShop; listings: SellerListin
                   {plural(listing.available, m.seller.overview.stockLeft)}
                 </p>
               </div>
-              <Link href={panelPath(shop.slug, "productos", listing.id)} className="btn btn-sm shrink-0">
+              <Link href={panelPath(shop.slug, "products", listing.id)} className="btn btn-sm shrink-0">
                 {m.seller.overview.restock}
               </Link>
             </li>

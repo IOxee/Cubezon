@@ -35,12 +35,12 @@ function HowToCollect() {
       <div className="ticket-rule my-3" />
       <ul className="flex flex-col gap-1">
         <li>
-          <Link href="/pedidos" className="link">
+          <Link href="/orders" className="link">
             {t.ordersLink}
           </Link>
         </li>
         <li>
-          <Link href="/ayuda#recoger" className="link">
+          <Link href="/help#pickup" className="link">
             {t.helpLink}
           </Link>
         </li>

@@ -119,7 +119,7 @@ async function MyShops() {
       <SectionHeader label={m.seller.myShops.label} title={m.seller.myShops.title} href="/panel" linkText={m.seller.myShops.seeAll} />
       <ul className="space-y-4">
         {shops.map((shop) => (
-          <li key={shop.id} id={`tienda-${shop.slug}`} className="scroll-mt-4">
+          <li key={shop.id} id={`shop-${shop.slug}`} className="scroll-mt-4">
             <ShopStatusCard shop={shop} canResubmit={canResubmit} />
           </li>
         ))}
@@ -140,7 +140,7 @@ function SignInGate() {
       <p className="mt-2 text-sm text-ink-2">
         <CommandText text={m.seller.gate.body} command={m.commands.link} />
       </p>
-      <Link href={`/entrar?next=${encodeURIComponent("/vender")}`} className="btn btn-primary btn-block mt-4">
+      <Link href={`/login?next=${encodeURIComponent("/sell")}`} className="btn btn-primary btn-block mt-4">
         {m.seller.gate.cta}
       </Link>
     </section>
@@ -246,7 +246,7 @@ function ShopStatusCard({ shop, canResubmit }: { shop: SellerShop; canResubmit: 
 
       {shop.status === "PENDING" ? (
         <div className="mt-4 flex flex-wrap gap-2">
-          <Link href={panelPath(shop.slug, "productos")} className="btn btn-ink btn-sm">
+          <Link href={panelPath(shop.slug, "products")} className="btn btn-ink btn-sm">
             {t.preparePanel}
           </Link>
           <Link href={panelPath(shop.slug)} className="btn btn-sm">

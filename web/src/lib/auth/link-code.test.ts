@@ -28,14 +28,14 @@ describe("normalizeLinkCode", () => {
 
 describe("safeNextPath", () => {
   it("keeps relative paths inside the site", () => {
-    expect(safeNextPath("/caja")).toBe("/caja");
-    expect(safeNextPath("/caja?producto=1&unidades=2")).toBe("/caja?producto=1&unidades=2");
-    expect(safeNextPath("/pedidos/abc")).toBe("/pedidos/abc");
+    expect(safeNextPath("/checkout")).toBe("/checkout");
+    expect(safeNextPath("/checkout?product=1&units=2")).toBe("/checkout?product=1&units=2");
+    expect(safeNextPath("/orders/abc")).toBe("/orders/abc");
   });
 
   it("falls back for external or malformed targets", () => {
-    for (const raw of ["https://evil.example", "//evil.example", "/\\evil.example", "caja", "", null, undefined, 1]) {
-      expect(safeNextPath(raw)).toBe("/cuenta");
+    for (const raw of ["https://evil.example", "//evil.example", "/\\evil.example", "checkout", "", null, undefined, 1]) {
+      expect(safeNextPath(raw)).toBe("/account");
     }
   });
 

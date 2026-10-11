@@ -24,7 +24,7 @@ export const metadata: Metadata = { title: m.seller.meta.listings };
 const STATUS_ORDER: Record<ListingStatus, number> = { ACTIVE: 0, PAUSED: 1, REMOVED: 2 };
 const NEW_LISTING_CLASS = "btn btn-primary btn-sm";
 
-type Props = PageProps<"/panel/[tienda]/productos">;
+type Props = PageProps<"/panel/[shop]/products">;
 
 export default function ListingsPage({ params, searchParams }: Props) {
   return (
@@ -33,7 +33,7 @@ export default function ListingsPage({ params, searchParams }: Props) {
         title={m.seller.listings.title}
         action={
           <Suspense fallback={<ShopPanelLinkFallback className={NEW_LISTING_CLASS}>{m.seller.listings.new}</ShopPanelLinkFallback>}>
-            <ShopPanelLink params={params} segments={["productos", "nuevo"]} permission="products.manage" className={NEW_LISTING_CLASS}>
+            <ShopPanelLink params={params} segments={["products", "new"]} permission="products.manage" className={NEW_LISTING_CLASS}>
               {m.seller.listings.new}
             </ShopPanelLink>
           </Suspense>
@@ -49,8 +49,8 @@ export default function ListingsPage({ params, searchParams }: Props) {
 type Row = SellerListing & { sold: number; openOrders: number };
 
 async function Listings({ params, searchParams }: Pick<Props, "params" | "searchParams">) {
-  const [{ tienda }, query] = await Promise.all([params, searchParams]);
-  const { shop } = await requireSellerShop(tienda, panelPath(tienda, "productos"));
+  const [{ shop: shopSlug }, query] = await Promise.all([params, searchParams]);
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "products"));
   const [listings, sales] = await Promise.all([getShopListings(shop.id), getShopSales(shop.id)]);
   // Without products.manage an employee only sees the products (and their stock).
   const editable = canEditShop(shop.status) && shop.permissions.includes("products.manage");
@@ -62,7 +62,7 @@ async function Listings({ params, searchParams }: Pick<Props, "params" | "search
     .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
 
   const flash =
-    query.aviso === "creado" ? m.seller.listings.flash.created : query.aviso === "guardado" ? m.seller.listings.flash.saved : null;
+    query.notice === "created" ? m.seller.listings.flash.created : query.notice === "saved" ? m.seller.listings.flash.saved : null;
 
   return (
     <div className="space-y-4">
@@ -82,7 +82,7 @@ async function Listings({ params, searchParams }: Pick<Props, "params" | "search
           body={m.seller.listings.empty.body}
           action={
             editable ? (
-              <Link href={panelPath(shop.slug, "productos", "nuevo")} className="btn btn-primary">
+              <Link href={panelPath(shop.slug, "products", "new")} className="btn btn-primary">
                 {m.seller.listings.empty.cta}
               </Link>
             ) : null
@@ -171,7 +171,7 @@ function RowActions({ shopSlug, row }: { shopSlug: string; row: Row }) {
   const changeStatus = changeListingStatusAction.bind(null, shopSlug);
   return (
     <div className="flex justify-end gap-1">
-      <Link href={panelPath(shopSlug, "productos", row.id)} className="btn btn-sm">
+      <Link href={panelPath(shopSlug, "products", row.id)} className="btn btn-sm">
         {t.edit}
       </Link>
       <form action={changeStatus}>

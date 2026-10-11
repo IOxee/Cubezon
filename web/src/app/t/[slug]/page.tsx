@@ -43,7 +43,7 @@ function shopStats(shop: ShopDetails): ShopHeaderStat[] {
 
 async function ShopListings({ slug, searchParams }: { slug: string; searchParams: SearchParams }) {
   const t = m.catalog.shop;
-  const raw = (await searchParams).pag;
+  const raw = (await searchParams).page;
   const requested = Number.parseInt(Array.isArray(raw) ? (raw[0] ?? "") : (raw ?? ""), 10);
   const page = Number.isFinite(requested) && requested > 1 ? Math.min(requested, 10_000) : 1;
   const { items, total } = await searchCatalog({ shopSlug: slug, sort: "relevance", page });
@@ -55,7 +55,7 @@ async function ShopListings({ slug, searchParams }: { slug: string; searchParams
   return (
     <>
       <ProductGrid items={items} />
-      <Pagination page={page} totalPages={totalPages} href={(p) => (p > 1 ? `/t/${slug}?pag=${p}#escaparate` : `/t/${slug}#escaparate`)} />
+      <Pagination page={page} totalPages={totalPages} href={(p) => (p > 1 ? `/t/${slug}?page=${p}#showcase` : `/t/${slug}#showcase`)} />
     </>
   );
 }
@@ -88,7 +88,7 @@ async function ShopPageContent({ params, searchParams }: { params: Params; searc
         <Breadcrumbs
           items={[
             { label: m.catalog.breadcrumbs.home, href: "/" },
-            { label: m.catalog.breadcrumbs.shops, href: "/tiendas" },
+            { label: m.catalog.breadcrumbs.shops, href: "/shops" },
             { label: shop.name },
           ]}
         />
@@ -103,13 +103,13 @@ async function ShopPageContent({ params, searchParams }: { params: Params; searc
       </div>
 
       {featured.length > 0 ? (
-        <section id="destacados" aria-label={t.featuredTitle} className="scroll-mt-4">
+        <section id="featured" aria-label={t.featuredTitle} className="scroll-mt-4">
           <SectionHeader label={t.featuredLabel} title={t.featuredTitle} />
           <ProductGrid items={featured} layout="featured" />
         </section>
       ) : null}
 
-      <section id="escaparate" className="scroll-mt-4">
+      <section id="showcase" className="scroll-mt-4">
         <SectionHeader label={t.listingsLabel} title={t.listingsTitle} />
         <Suspense fallback={<ProductGridSkeleton count={10} />}>
           <ShopListings slug={slug} searchParams={searchParams} />

@@ -4,7 +4,7 @@ import { deleteListingPhotos } from "@/lib/data/seller";
 import { isListingPhotoPathOf } from "@/lib/listing-photos";
 import { adminDb, dbError } from "@/lib/supabase/server";
 
-/** /admin/fotos: product photos to moderate, newest first, and taking one down. */
+/** /admin/photos: product photos to moderate, newest first, and taking one down. */
 
 export const LISTING_PHOTOS_PAGE_SIZE = 24;
 

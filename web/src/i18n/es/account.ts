@@ -72,10 +72,10 @@ export const account = {
     title: "Mis pedidos",
     tabsLabel: "Filtrar pedidos",
     tabs: {
-      all: { name: "Todos", slug: "" },
-      active: { name: "En curso", slug: "en-curso" },
-      collected: { name: "Recogidos", slug: "recogidos" },
-      issues: { name: "Incidencias", slug: "incidencias" },
+      all: { name: "Todos" },
+      active: { name: "En curso" },
+      collected: { name: "Recogidos" },
+      issues: { name: "Incidencias" },
     },
     created: {
       one: "Pedido confirmado. El servidor lo cobrará de tu saldo en el juego en breve.",

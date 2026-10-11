@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FEATURES, featureDef, parseFeatureForm, parseFeatureInput, parsePublishedFeatures } from "./features";
+import { FEATURES, featureDef, isFeaturePending, parseFeatureForm, parseFeatureInput, parsePublishedFeatures } from "./features";
 
 const form = (values: Record<string, string>) => (name: string) => values[name] ?? null;
 
@@ -45,6 +45,20 @@ describe("parseFeatureForm", () => {
     expect(parseFeatureForm(form({ "orders.automatic.delay-min-minutes": "20" }), published))
       .toEqual({ ok: false, invalid: [], delays: true });
     expect(parseFeatureForm(form({ "orders.automatic.delay-min-minutes": "5" }), published).ok).toBe(true);
+  });
+});
+
+describe("isFeaturePending", () => {
+  it("is pending until the plugin publishes the stored value", () => {
+    expect(isFeaturePending("true", false)).toBe(true);
+    expect(isFeaturePending("true", true)).toBe(false);
+    expect(isFeaturePending("12.5", 12.5)).toBe(false);
+    expect(isFeaturePending("30", 10)).toBe(true);
+  });
+
+  it("is never pending without an override or without published values", () => {
+    expect(isFeaturePending(undefined, true)).toBe(false);
+    expect(isFeaturePending("true", undefined)).toBe(false);
   });
 });
 

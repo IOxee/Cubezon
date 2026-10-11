@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: m.roles.metaTitle };
 
 const t = m.roles;
 
-type Props = PageProps<"/panel/[tienda]/rangos">;
+type Props = PageProps<"/panel/[shop]/ranks">;
 
 /**
  * Ranks of one shop (shop_roles) in a table; each one is edited in a modal. Only the owner sees
@@ -36,8 +36,8 @@ export default function RolesPage({ params }: Props) {
 }
 
 async function Roles({ params }: Pick<Props, "params">) {
-  const { tienda } = await params;
-  const { shop } = await requireSellerShop(tienda, panelPath(tienda, "rangos"), { ownerOnly: true });
+  const { shop: shopSlug } = await params;
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "ranks"), { ownerOnly: true });
   const [roles, max] = await Promise.all([getShopRoles(shop.id), getMaxShopRoles()]);
   const editable = canEditShop(shop.status);
   const fallback = roles.find((role) => role.isDefault)?.name ?? m.roleplay.employees.noRole;

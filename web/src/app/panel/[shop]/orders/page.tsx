@@ -11,13 +11,14 @@ import { OrdersTable } from "@/components/seller/orders-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { PanelHeader, PanelSkeleton } from "../../_components/panel-ui";
+import { keyFromSlug, keySlug } from "@/lib/url-slug";
 
 export const metadata: Metadata = { title: m.seller.meta.orders };
 
 const PAGE_SIZE = 25;
 const t = m.seller.orders;
 
-type Props = PageProps<"/panel/[tienda]/pedidos">;
+type Props = PageProps<"/panel/[shop]/orders">;
 
 export default function OrdersPage({ params, searchParams }: Props) {
   return (
@@ -35,7 +36,7 @@ function first(value: string | string[] | undefined): string | undefined {
 }
 
 function filterFromSlug(slug: string | undefined): OrderFilter {
-  return ORDER_FILTERS.find((filter) => filter !== "all" && t.filters[filter].slug === slug) ?? "all";
+  return keyFromSlug(ORDER_FILTERS, slug) ?? "all";
 }
 
 /** Filter labels: in roleplay mode PENDING and PAID read "Por aceptar" and "En preparación". */
@@ -46,18 +47,18 @@ function filterLabel(filter: OrderFilter, mode: OrdersMode): string {
 
 function ordersHref(slug: string, filter: OrderFilter, page = 1): string {
   const query = new URLSearchParams();
-  if (t.filters[filter].slug) query.set("estado", t.filters[filter].slug);
-  if (page > 1) query.set("pagina", String(page));
+  if (filter !== "all") query.set("status", keySlug(filter));
+  if (page > 1) query.set("page", String(page));
   const search = query.toString();
-  const path = panelPath(slug, "pedidos");
+  const path = panelPath(slug, "orders");
   return search ? `${path}?${search}` : path;
 }
 
 async function Orders({ params, searchParams }: Pick<Props, "params" | "searchParams">) {
-  const [{ tienda }, query] = await Promise.all([params, searchParams]);
-  const { shop } = await requireSellerShop(tienda, panelPath(tienda, "pedidos"));
-  const filter = filterFromSlug(first(query.estado));
-  const page = Math.max(1, Number.parseInt(first(query.pagina) ?? "1", 10) || 1);
+  const [{ shop: shopSlug }, query] = await Promise.all([params, searchParams]);
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "orders"));
+  const filter = filterFromSlug(first(query.status));
+  const page = Math.max(1, Number.parseInt(first(query.page) ?? "1", 10) || 1);
   const [{ orders, total }, mode] = await Promise.all([
     getShopOrders(shop.id, { statuses: filterStatuses(filter), page, pageSize: PAGE_SIZE }),
     getOrdersMode(),

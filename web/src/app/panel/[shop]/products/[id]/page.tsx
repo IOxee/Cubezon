@@ -21,7 +21,7 @@ import { listingPhotoUrl } from "@/lib/listing-photos";
 
 export const metadata: Metadata = { title: m.seller.meta.editListing };
 
-type Props = PageProps<"/panel/[tienda]/productos/[id]">;
+type Props = PageProps<"/panel/[shop]/products/[id]">;
 
 export default function EditListingPage({ params, searchParams }: Props) {
   return (
@@ -35,8 +35,8 @@ export default function EditListingPage({ params, searchParams }: Props) {
 }
 
 async function EditListing({ params, searchParams }: Pick<Props, "params" | "searchParams">) {
-  const [{ tienda, id }, query] = await Promise.all([params, searchParams]);
-  const { shop } = await requireSellerShop(tienda, panelPath(tienda, "productos", id));
+  const [{ shop: shopSlug, id }, query] = await Promise.all([params, searchParams]);
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "products", id));
   if (!isUuid(id)) notFound();
   // Filtered by the shop: a listing of another shop (even another of the player's) is a 404 here.
   const listing = await getShopListing(shop.id, id);
@@ -51,7 +51,7 @@ async function EditListing({ params, searchParams }: Pick<Props, "params" | "sea
           <span className="num">{fmt(m.common.serial, { serial: serialOf(listing.id) })}</span>
           <ListingStatusBadge status={listing.status} />
         </p>
-        {query.aviso === "recuperado" && listing.status !== "REMOVED" ? (
+        {query.notice === "restored" && listing.status !== "REMOVED" ? (
           <Notice tone="success">{m.seller.listingForm.restored}</Notice>
         ) : null}
         {listing.status === "REMOVED" ? (
@@ -68,7 +68,7 @@ async function EditListing({ params, searchParams }: Pick<Props, "params" | "sea
           <div className="card p-5">
             <ListingForm
               action={saveListingAction.bind(null, shop.slug)}
-              backHref={panelPath(shop.slug, "productos")}
+              backHref={panelPath(shop.slug, "products")}
               formatLocked={isListingFormatLocked(listing)}
               listing={{
                 id: listing.id,

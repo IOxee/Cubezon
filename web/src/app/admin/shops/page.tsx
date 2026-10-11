@@ -15,16 +15,17 @@ import {
   type ShopStatus,
 } from "@/lib/data/admin";
 import { ShopReviewCard } from "./_components/shop-review-card";
+import { keyFromSlug, keySlug } from "@/lib/url-slug";
 
 export const metadata: Metadata = { title: m.admin.shops.title };
 
 const t = m.admin.shops;
 
 function statusFromSlug(slug: string): ShopStatus {
-  return SHOP_STATUSES.find((status) => m.admin.slugs.shop[status] === slug) ?? "PENDING";
+  return keyFromSlug(SHOP_STATUSES, slug) ?? "PENDING";
 }
 
-export default function AdminShopsPage(props: PageProps<"/admin/tiendas">) {
+export default function AdminShopsPage(props: PageProps<"/admin/shops">) {
   return (
     <>
       <AdminPageHeader title={t.title} intro={t.intro} />
@@ -35,11 +36,11 @@ export default function AdminShopsPage(props: PageProps<"/admin/tiendas">) {
   );
 }
 
-async function ShopsList({ searchParams }: { searchParams: PageProps<"/admin/tiendas">["searchParams"] }) {
+async function ShopsList({ searchParams }: { searchParams: PageProps<"/admin/shops">["searchParams"] }) {
   const staff = await requireStaff();
   const params = await searchParams;
-  const status = statusFromSlug(firstParam(params.estado));
-  const page = parsePage(params.pagina);
+  const status = statusFromSlug(firstParam(params.status));
+  const page = parsePage(params.page);
 
   const [counts, { shops, total }] = await Promise.all([countShopsByStatus(), listShops(status, page)]);
 
@@ -48,7 +49,7 @@ async function ShopsList({ searchParams }: { searchParams: PageProps<"/admin/tie
       <StatusTabs
         label={t.tabsLabel}
         tabs={SHOP_STATUSES.map((tab) => ({
-          href: tab === "PENDING" ? "/admin/tiendas" : `/admin/tiendas?estado=${m.admin.slugs.shop[tab]}`,
+          href: tab === "PENDING" ? "/admin/shops" : `/admin/shops?status=${keySlug(tab)}`,
           label: t.tabs[tab],
           count: counts[tab],
           active: tab === status,
@@ -70,8 +71,8 @@ async function ShopsList({ searchParams }: { searchParams: PageProps<"/admin/tie
       <Pagination
         page={page}
         pageCount={Math.ceil(total / ADMIN_PAGE_SIZE)}
-        basePath="/admin/tiendas"
-        params={{ estado: status === "PENDING" ? "" : m.admin.slugs.shop[status] }}
+        basePath="/admin/shops"
+        params={{ status: status === "PENDING" ? "" : keySlug(status) }}
       />
     </>
   );

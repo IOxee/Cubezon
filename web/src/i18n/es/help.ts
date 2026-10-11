@@ -21,7 +21,7 @@ export const help = {
   },
 
   sections: {
-    vincular: {
+    link: {
       label: "Cuenta",
       title: "Vincular tu cuenta",
       steps: [
@@ -31,7 +31,7 @@ export const help = {
       ],
       note: "No hay contraseñas: tu cuenta de la web es tu cuenta del juego. Si el código caduca, pide otro.",
     },
-    comprar: {
+    buy: {
       label: "Compra",
       title: "Comprar",
       steps: [
@@ -41,7 +41,7 @@ export const help = {
       ],
       note: "Cada unidad es un lote: si un producto dice ×16, por cada unidad recibes 16 objetos. Sigue el estado en {orders}.",
     },
-    recoger: {
+    pickup: {
       label: "Recogida",
       title: "Recoger un pedido",
       steps: [
@@ -51,7 +51,7 @@ export const help = {
       ],
       note: "Solo puedes recoger tus pedidos, y solo en la taquilla que elegiste al pagar. Lleva tantos huecos libres en el inventario como unidades tenga el pedido.",
     },
-    vender: {
+    sell: {
       label: "Venta",
       title: "Vender en Cubezon",
       steps: [
@@ -61,7 +61,7 @@ export const help = {
       ],
       note: "Cobras en dinero del juego cuando el servidor procesa cada pedido (en modo roleplay, cuando el paquete llega a la taquilla).",
     },
-    depositar: {
+    deposit: {
       label: "Stock",
       title: "Depositar stock",
       steps: [

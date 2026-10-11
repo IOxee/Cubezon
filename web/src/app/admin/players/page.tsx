@@ -29,10 +29,10 @@ const t = m.admin.players;
 /** Longest Minecraft name: the search box accepts no more. */
 const NAME_MAX = 16;
 
-type SearchParams = PageProps<"/admin/jugadores">["searchParams"];
+type SearchParams = PageProps<"/admin/players">["searchParams"];
 
 /** Superadmin only: even the title waits for the role check, so admins just get a 404. */
-export default function AdminPlayersPage(props: PageProps<"/admin/jugadores">) {
+export default function AdminPlayersPage(props: PageProps<"/admin/players">) {
   return (
     <Suspense fallback={<TableSkeleton />}>
       <Players searchParams={props.searchParams} />
@@ -44,8 +44,8 @@ async function Players({ searchParams }: { searchParams: SearchParams }) {
   await requireStaff("SUPERADMIN");
   const params = await searchParams;
   const q = firstParam(params.q).trim().slice(0, NAME_MAX);
-  const customOnly = firstParam(params.propios) === "1";
-  const page = parsePage(params.pagina);
+  const customOnly = firstParam(params.own) === "1";
+  const page = parsePage(params.page);
 
   const { players, total, settings } = await searchPlayerSlots({ q, customOnly, page });
   const filtered = Boolean(q || customOnly);
@@ -87,8 +87,8 @@ async function Players({ searchParams }: { searchParams: SearchParams }) {
       <Pagination
         page={page}
         pageCount={Math.ceil(total / PLAYER_SLOTS_PAGE_SIZE)}
-        basePath="/admin/jugadores"
-        params={{ q, propios: customOnly ? "1" : "" }}
+        basePath="/admin/players"
+        params={{ q, own: customOnly ? "1" : "" }}
       />
     </>
   );
@@ -142,7 +142,7 @@ function Filters({ q, customOnly }: { q: string; customOnly: boolean }) {
     // Keyed by the filters so "clear" also empties the fields.
     <Form
       key={`${q}|${customOnly}`}
-      action="/admin/jugadores"
+      action="/admin/players"
       role="search"
       aria-label={t.filters.label}
       className="mb-4 flex flex-wrap items-end gap-2"
@@ -164,14 +164,14 @@ function Filters({ q, customOnly }: { q: string; customOnly: boolean }) {
         />
       </div>
       <label className="flex items-center gap-2 self-center pt-5 text-sm">
-        <input type="checkbox" name="propios" value="1" defaultChecked={customOnly} className="accent-ink" />
+        <input type="checkbox" name="own" value="1" defaultChecked={customOnly} className="accent-ink" />
         {t.filters.customOnly}
       </label>
       <button type="submit" className="btn btn-ink">
         {t.filters.submit}
       </button>
       {q || customOnly ? (
-        <Link href="/admin/jugadores" className="btn btn-ghost">
+        <Link href="/admin/players" className="btn btn-ghost">
           {t.filters.clear}
         </Link>
       ) : null}

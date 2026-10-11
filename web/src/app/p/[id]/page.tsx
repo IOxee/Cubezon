@@ -20,6 +20,7 @@ import { Rating } from "@/components/ui/rating";
 import { SectionHeader } from "@/components/ui/section-header";
 import { SoldBy } from "@/components/ui/shop-mark";
 import { Stamp } from "@/components/ui/stamp";
+import { keySlug } from "@/lib/url-slug";
 
 export async function generateMetadata(props: PageProps<"/p/[id]">): Promise<Metadata> {
   const { id } = await props.params;
@@ -67,7 +68,7 @@ function ProductInfo({ item }: { item: CatalogItem }) {
       <h1 className="text-2xl md:text-3xl">{item.title}</h1>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <SoldBy name={item.shop.name} slug={item.shop.slug} ink={item.shop.ink} official={item.shop.official} />
-        <a href="#valoraciones" className="hover:underline" aria-label={t.seeReviews}>
+        <a href="#reviews" className="hover:underline" aria-label={t.seeReviews}>
           <Rating value={item.ratingAvg} count={item.ratingCount} />
         </a>
       </div>
@@ -127,7 +128,7 @@ function ProductDetailsTable({ item }: { item: CatalogItem }) {
     {
       label: t.category,
       value: (
-        <Link href={`/buscar?categoria=${category.slug}`} className="link">
+        <Link href={`/search?category=${keySlug(item.category)}`} className="link">
           {category.name}
         </Link>
       ),
@@ -193,8 +194,8 @@ async function ProductPageContent({ params }: { params: PageProps<"/p/[id]">["pa
       <div>
         <Breadcrumbs
           items={[
-            { label: m.catalog.breadcrumbs.catalog, href: "/buscar" },
-            { label: category.name, href: `/buscar?categoria=${category.slug}` },
+            { label: m.catalog.breadcrumbs.catalog, href: "/search" },
+            { label: category.name, href: `/search?category=${keySlug(item.category)}` },
             { label: item.title },
           ]}
         />

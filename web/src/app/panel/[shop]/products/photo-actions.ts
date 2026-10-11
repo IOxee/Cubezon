@@ -41,7 +41,7 @@ export async function listingPhotoAction(
   formData: FormData,
 ): Promise<ShopImageState> {
   if (!isUuid(listingId)) return photoError("generic");
-  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "productos", listingId), {
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "products", listingId), {
     permission: "products.manage",
   });
   if (!canEditShop(shop.status)) return photoError("suspended");

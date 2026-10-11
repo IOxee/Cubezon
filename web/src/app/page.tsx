@@ -28,10 +28,10 @@ function Hero() {
         <h1 className="text-2xl md:text-3xl">{t.title}</h1>
         <p className="max-w-prose text-md text-ink-2">{t.body}</p>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <Link href="/buscar" className="btn btn-primary btn-lg">
+          <Link href="/search" className="btn btn-primary btn-lg">
             {t.cta}
           </Link>
-          <Link href="/ayuda" className="btn btn-lg">
+          <Link href="/help" className="btn btn-lg">
             {t.help}
           </Link>
           <Stamp rotate={-6} className="ml-2">
@@ -78,7 +78,7 @@ async function Shelves() {
         title={m.empty.catalog.title}
         body={m.empty.catalog.body}
         action={
-          <Link href="/vender" className="btn btn-primary">
+          <Link href="/sell" className="btn btn-primary">
             {m.empty.catalog.cta}
           </Link>
         }
@@ -89,14 +89,14 @@ async function Shelves() {
   return (
     <>
       <section>
-        <SectionHeader label={t.newest.label} title={t.newest.title} href="/buscar?orden=newest" linkText={t.newest.link} />
+        <SectionHeader label={t.newest.label} title={t.newest.title} href="/search?sort=newest" linkText={t.newest.link} />
         <ProductGrid items={newest} />
       </section>
       <section>
         <SectionHeader
           label={t.bestSelling.label}
           title={t.bestSelling.title}
-          href="/buscar?orden=best_selling"
+          href="/search?sort=best_selling"
           linkText={t.bestSelling.link}
         />
         {bestSellers.length > 0 ? (
@@ -114,13 +114,13 @@ async function ShopsShelf() {
   const shops = await getTopShops(6);
   return (
     <section>
-      <SectionHeader label={t.label} title={t.title} href={shops.length > 0 ? "/tiendas" : undefined} linkText={t.link} />
+      <SectionHeader label={t.label} title={t.title} href={shops.length > 0 ? "/shops" : undefined} linkText={t.link} />
       {shops.length > 0 ? (
         <ShopGrid shops={shops} />
       ) : (
         <p className="card-soft flex flex-wrap items-center justify-between gap-3 px-4 py-4 text-sm text-ink-2">
           {t.empty}
-          <Link href="/vender" className="btn btn-sm">
+          <Link href="/sell" className="btn btn-sm">
             {t.cta}
           </Link>
         </p>
@@ -160,7 +160,7 @@ async function LockersBand() {
           </ul>
         ) : null}
       </div>
-      <Link href="/taquillas" className="btn justify-self-start md:justify-self-end">
+      <Link href="/lockers" className="btn justify-self-start md:justify-self-end">
         {t.link}
       </Link>
     </section>
@@ -173,7 +173,7 @@ export default function HomePage() {
     <div className="flex flex-col gap-12">
       <Hero />
       <section>
-        <SectionHeader label={t.categories.label} title={t.categories.title} href="/buscar" linkText={m.nav.all} />
+        <SectionHeader label={t.categories.label} title={t.categories.title} href="/search" linkText={m.nav.all} />
         <CategoryGrid />
       </section>
       <Shelves />

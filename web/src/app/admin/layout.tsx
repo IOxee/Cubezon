@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { AdminNav, type AdminNavItem } from "@/components/admin/admin-nav";
+import { AutoRefresh } from "@/components/admin/auto-refresh";
 import { AdminShellSkeleton } from "@/components/admin/skeletons";
 import { fmt, m } from "@/i18n";
 import { requireStaff } from "@/lib/auth/session";
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
 /**
  * Admin area. The whole frame waits for the staff check (404 for anyone else), so the static
  * shell only holds a neutral skeleton. Each page checks again and loads its data in its own
- * Suspense boundary, so navigating between sections stays instant.
+ * Suspense boundary, so navigating between sections stays instant. Every admin page refreshes
+ * itself every few seconds (AutoRefresh), so moderation queues stay current.
  */
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
@@ -27,16 +29,16 @@ async function AdminShell({ children }: { children: ReactNode }) {
   const staff = await requireStaff();
   const items: AdminNavItem[] = [
     { href: "/admin", label: m.admin.nav.overview, segment: null },
-    { href: "/admin/tiendas", label: m.admin.nav.shops, segment: "tiendas" },
-    { href: "/admin/pedidos", label: m.admin.nav.orders, segment: "pedidos" },
-    { href: "/admin/taquillas", label: m.admin.nav.lockers, segment: "taquillas" },
-    { href: "/admin/fotos", label: m.admin.nav.photos, segment: "fotos" },
+    { href: "/admin/shops", label: m.admin.nav.shops, segment: "shops" },
+    { href: "/admin/orders", label: m.admin.nav.orders, segment: "orders" },
+    { href: "/admin/lockers", label: m.admin.nav.lockers, segment: "lockers" },
+    { href: "/admin/photos", label: m.admin.nav.photos, segment: "photos" },
   ];
   if (staff.role === "SUPERADMIN") {
-    items.push({ href: "/admin/equipo", label: m.admin.nav.team, segment: "equipo" });
-    items.push({ href: "/admin/jugadores", label: m.admin.nav.players, segment: "jugadores" });
-    items.push({ href: "/admin/temas", label: m.admin.nav.themes, segment: "temas" });
-    items.push({ href: "/admin/funciones", label: m.admin.nav.features, segment: "funciones" });
+    items.push({ href: "/admin/team", label: m.admin.nav.team, segment: "team" });
+    items.push({ href: "/admin/players", label: m.admin.nav.players, segment: "players" });
+    items.push({ href: "/admin/themes", label: m.admin.nav.themes, segment: "themes" });
+    items.push({ href: "/admin/features", label: m.admin.nav.features, segment: "features" });
   }
 
   return (
@@ -50,6 +52,7 @@ async function AdminShell({ children }: { children: ReactNode }) {
         <AdminNav items={items} label={m.admin.nav.label} />
       </aside>
       <div className="min-w-0">{children}</div>
+      <AutoRefresh />
     </div>
   );
 }

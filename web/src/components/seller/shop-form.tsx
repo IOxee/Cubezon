@@ -48,7 +48,7 @@ export function ShopForm({
   logoUrl?: string | null;
   autoSlug?: boolean;
   resetOnSave?: boolean;
-  /** Prefix of the field ids: several forms can share a page (/vender). */
+  /** Prefix of the field ids: several forms can share a page (/sell). */
   idPrefix?: string;
   submitLabel: string;
   pendingLabel: string;

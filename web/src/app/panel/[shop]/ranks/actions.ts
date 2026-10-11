@@ -27,7 +27,7 @@ const t = m.roles;
 
 /** Creates a rank (no id in the form) or renames one and sets its permissions. */
 export async function saveRoleAction(shopSlug: string, _state: RoleFormState, formData: FormData): Promise<RoleFormState> {
-  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "rangos"), { ownerOnly: true });
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "ranks"), { ownerOnly: true });
   const id = formData.get("id");
   const rawName = formData.get("name");
   const values = {
@@ -65,7 +65,7 @@ export async function saveRoleAction(shopSlug: string, _state: RoleFormState, fo
 
 /** Deletes a rank; its employees move to the default rank (the database does it). */
 export async function deleteRoleAction(shopSlug: string, formData: FormData): Promise<void> {
-  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "rangos"), { ownerOnly: true });
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "ranks"), { ownerOnly: true });
   const id = formData.get("id");
   if (!isUuid(id) || !canEditShop(shop.status)) return;
   await deleteShopRole(shop.id, id);
@@ -74,7 +74,7 @@ export async function deleteRoleAction(shopSlug: string, formData: FormData): Pr
 
 /** Makes a rank the one new employees get. */
 export async function setDefaultRoleAction(shopSlug: string, formData: FormData): Promise<void> {
-  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "rangos"), { ownerOnly: true });
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "ranks"), { ownerOnly: true });
   const id = formData.get("id");
   if (!isUuid(id) || !canEditShop(shop.status)) return;
   await setDefaultShopRole(shop.id, id);

@@ -14,6 +14,7 @@ import { Notice } from "@/components/ui/notice";
 import { OrderStatusStamp } from "@/components/ui/order-status";
 import { isProcessing, type OrdersMode } from "@/lib/order-display";
 import { Price } from "@/components/ui/price";
+import { keyFromSlug, keySlug } from "@/lib/url-slug";
 
 export const metadata: Metadata = { title: m.account.orders.metaTitle };
 
@@ -24,19 +25,19 @@ function first(value: string | string[] | undefined): string | undefined {
 }
 
 function groupFromSlug(slug: string | undefined): OrderGroup {
-  return GROUPS.find((group) => group !== "all" && m.account.orders.tabs[group].slug === slug) ?? "all";
+  return keyFromSlug(GROUPS, slug) ?? "all";
 }
 
-/** /pedidos?estado=<slug>&pagina=<n> (defaults are left out of the URL). */
+/** /orders?status=<slug>&page=<n> (defaults are left out of the URL). */
 function ordersHref(group: OrderGroup, page = 1): string {
   const params = new URLSearchParams();
-  if (group !== "all") params.set("estado", m.account.orders.tabs[group].slug);
-  if (page > 1) params.set("pagina", String(page));
+  if (group !== "all") params.set("status", keySlug(group));
+  if (page > 1) params.set("page", String(page));
   const query = params.toString();
-  return query ? `/pedidos?${query}` : "/pedidos";
+  return query ? `/orders?${query}` : "/orders";
 }
 
-export default function OrdersPage(props: PageProps<"/pedidos">) {
+export default function OrdersPage(props: PageProps<"/orders">) {
   const t = m.account.orders;
   return (
     <div className="flex flex-col gap-6">
@@ -51,12 +52,12 @@ export default function OrdersPage(props: PageProps<"/pedidos">) {
   );
 }
 
-async function Orders({ searchParams }: { searchParams: PageProps<"/pedidos">["searchParams"] }) {
+async function Orders({ searchParams }: { searchParams: PageProps<"/orders">["searchParams"] }) {
   const t = m.account.orders;
   const params = await searchParams;
-  const group = groupFromSlug(first(params.estado));
-  const requestedPage = Math.max(1, Math.floor(Number(first(params.pagina)) || 1));
-  const created = Math.floor(Number(first(params.nuevos)) || 0);
+  const group = groupFromSlug(first(params.status));
+  const requestedPage = Math.max(1, Math.floor(Number(first(params.page)) || 1));
+  const created = Math.floor(Number(first(params.new)) || 0);
 
   const player = await requirePlayer(ordersHref(group, requestedPage));
   const [{ orders, total }, counts, mode] = await Promise.all([
@@ -106,7 +107,7 @@ async function Orders({ searchParams }: { searchParams: PageProps<"/pedidos">["s
           icon="chest"
           action={
             group === "all" ? (
-              <Link href="/buscar" className="btn btn-primary">
+              <Link href="/search" className="btn btn-primary">
                 {t.empty.all.cta}
               </Link>
             ) : null
@@ -155,7 +156,7 @@ function OrderRow({ order, mode }: { order: OrderSummary; mode: OrdersMode }) {
           {fmt(t.orderNumber, { serial: serialOf(order.id) })} · {formatDate(order.createdAt)}
         </p>
         <h2 className="text-base leading-snug font-semibold [font-stretch:100%]">
-          <Link href={`/pedidos/${order.id}`} className="after:absolute after:inset-0 hover:underline">
+          <Link href={`/orders/${order.id}`} className="after:absolute after:inset-0 hover:underline">
             {order.listing.title}
           </Link>
         </h2>

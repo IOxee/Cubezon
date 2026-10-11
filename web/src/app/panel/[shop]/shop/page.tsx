@@ -20,7 +20,7 @@ import { shopImageAction, updateShopAction, updateShopProfileAction } from "./ac
 
 export const metadata: Metadata = { title: m.seller.meta.shop };
 
-type Props = PageProps<"/panel/[tienda]/tienda">;
+type Props = PageProps<"/panel/[shop]/shop">;
 
 /** Shop settings and public profile. Owner only: employees get a 404 (requireSellerShop). */
 export default function ShopSettingsPage({ params, searchParams }: Props) {
@@ -35,8 +35,8 @@ export default function ShopSettingsPage({ params, searchParams }: Props) {
 }
 
 async function ShopSettings({ params, searchParams }: Pick<Props, "params" | "searchParams">) {
-  const [{ tienda }, query] = await Promise.all([params, searchParams]);
-  const { player, shop } = await requireSellerShop(tienda, panelPath(tienda, "tienda"), { ownerOnly: true });
+  const [{ shop: shopSlug }, query] = await Promise.all([params, searchParams]);
+  const { player, shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "shop"), { ownerOnly: true });
   const editable = canEditShop(shop.status);
   const listings = editable ? await getShopListings(shop.id) : [];
   const featuredOptions: FeaturedOption[] = listings
@@ -44,8 +44,8 @@ async function ShopSettings({ params, searchParams }: Pick<Props, "params" | "se
     .map((listing) => ({ id: listing.id, title: listing.title, material: listing.material, available: listing.available }));
   const logoUrl = shopMediaUrl(shop.logoPath);
   const bannerUrl = shopMediaUrl(shop.bannerPath);
-  // After a slug change the action redirects here with ?aviso=guardado (the form state is lost).
-  const savedFlash = query.aviso === "guardado";
+  // After a slug change the action redirects here with ?notice=saved (the form state is lost).
+  const savedFlash = query.notice === "saved";
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -167,7 +167,7 @@ function StatusCard({ shop }: { shop: SellerShop }) {
         </Link>
       ) : null}
       {shop.status === "REJECTED" ? (
-        <Link href={`/vender#tienda-${shop.slug}`} className="btn btn-sm mt-3">
+        <Link href={`/sell#shop-${shop.slug}`} className="btn btn-sm mt-3">
           {m.seller.overview.fixRequest}
         </Link>
       ) : null}

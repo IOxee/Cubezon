@@ -14,11 +14,11 @@ import { PanelNav, PanelNavLinks } from "./panel-nav";
  * it renders inside <Suspense>. Nothing is shown for a slug that is not one of the player's
  * shops: the page itself answers with a 404.
  */
-export async function ShopSidebar({ params }: { params: Promise<{ tienda: string }> }) {
-  const [{ tienda }, player] = await Promise.all([params, getCurrentPlayer()]);
+export async function ShopSidebar({ params }: { params: Promise<{ shop: string }> }) {
+  const [{ shop: shopSlug }, player] = await Promise.all([params, getCurrentPlayer()]);
   if (!player) return null;
   const shops = await getPanelShops(player.uuid);
-  const shop = shops.find((candidate) => candidate.slug === tienda);
+  const shop = shops.find((candidate) => candidate.slug === shopSlug);
   if (!shop) return null;
   const others = shops.filter((candidate) => candidate.id !== shop.id);
 

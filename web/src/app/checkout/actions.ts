@@ -33,7 +33,7 @@ export type PlaceOrderState = { error: string | null; details: string[] };
  */
 export async function placeOrder(_prev: PlaceOrderState, formData: FormData): Promise<PlaceOrderState> {
   const t = m.shopping.checkout;
-  const player = await requirePlayer("/caja");
+  const player = await requirePlayer("/checkout");
 
   const request = parseCheckoutLines(formData.getAll("listingId"), formData.getAll("units"), formData.getAll("price"));
   if (!request) return { error: t.errors.invalid, details: [] };
@@ -77,7 +77,7 @@ export async function placeOrder(_prev: PlaceOrderState, formData: FormData): Pr
     store.set(CART_COOKIE, serializeCart(remaining), CART_COOKIE_OPTIONS);
   }
 
-  redirect(`/pedidos?nuevos=${result.lines.length}`);
+  redirect(`/orders?new=${result.lines.length}`);
 }
 
 /** Locker or express delivery, checked against the database (and the fee the buyer saw). */

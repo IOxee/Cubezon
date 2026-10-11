@@ -1,10 +1,10 @@
-import { m } from "@/i18n";
 import { categoryFromSlug, type CategoryKey } from "@/lib/categories";
 import { isCatalogSort, type CatalogQuery, type CatalogSort } from "@/lib/data/catalog";
 import { isShopSlug } from "@/lib/data/shops";
+import { keySlug } from "@/lib/url-slug";
 
 /** Search page state, read from (and written back to) the URL in Spanish:
- * ?q=&categoria=<slug>&tienda=<slug>&stock=1&min=&max=&orden=&pag= */
+ * ?q=&category=<slug>&shop=<slug>&stock=1&min=&max=&sort=&page= */
 export type SearchState = {
   q: string;
   category: CategoryKey | null;
@@ -34,16 +34,16 @@ function parsePrice(value: string): number | null {
 }
 
 export function parseSearch(params: RawParams): SearchState {
-  const shop = first(params.tienda);
-  const sort = first(params.orden);
-  const page = Number.parseInt(first(params.pag), 10);
+  const shop = first(params.shop);
+  const sort = first(params.sort);
+  const page = Number.parseInt(first(params.page), 10);
   let min = parsePrice(first(params.min));
   let max = parsePrice(first(params.max));
   if (min !== null && max !== null && min > max) [min, max] = [max, min];
 
   return {
     q: first(params.q).slice(0, MAX_QUERY),
-    category: categoryFromSlug(first(params.categoria) || undefined),
+    category: categoryFromSlug(first(params.category) || undefined),
     shop: isShopSlug(shop) ? shop : null,
     inStock: first(params.stock) === "1",
     min,
@@ -71,15 +71,15 @@ export function searchHref(state: SearchState, changes: Partial<SearchState> = {
   const next = { ...state, page: 1, ...changes };
   const params = new URLSearchParams();
   if (next.q) params.set("q", next.q);
-  if (next.category) params.set("categoria", m.categories[next.category].slug);
-  if (next.shop) params.set("tienda", next.shop);
+  if (next.category) params.set("category", keySlug(next.category));
+  if (next.shop) params.set("shop", next.shop);
   if (next.inStock) params.set("stock", "1");
   if (next.min !== null) params.set("min", String(next.min));
   if (next.max !== null) params.set("max", String(next.max));
-  if (next.sort !== "relevance") params.set("orden", next.sort);
-  if (next.page > 1) params.set("pag", String(next.page));
+  if (next.sort !== "relevance") params.set("sort", next.sort);
+  if (next.page > 1) params.set("page", String(next.page));
   const query = params.toString();
-  return query ? `/buscar?${query}` : "/buscar";
+  return query ? `/search?${query}` : "/search";
 }
 
 /** Stable key of the filters (remounts the filter form when the URL changes). */

@@ -17,7 +17,7 @@ export function Pagination({
 
   const hrefFor = (target: number) => {
     const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== ""));
-    if (target > 1) query.set("pagina", String(target));
+    if (target > 1) query.set("page", String(target));
     const qs = query.toString();
     return qs ? `${basePath}?${qs}` : basePath;
   };
@@ -47,7 +47,7 @@ export function firstParam(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value) ?? "";
 }
 
-/** ?pagina= as a positive integer (1 by default). */
+/** ?page= as a positive integer (1 by default). */
 export function parsePage(value: string | string[] | undefined): number {
   const page = Number.parseInt(firstParam(value), 10);
   return Number.isFinite(page) && page > 0 ? Math.min(page, 10_000) : 1;

@@ -34,7 +34,7 @@ export async function addEmployeeAction(
   formData: FormData,
 ): Promise<EmployeeFormState> {
   const t = m.roleplay.employees;
-  const { player, shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "empleados"), { permission: "staff.manage" });
+  const { player, shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "staff"), { permission: "staff.manage" });
   const raw = formData.get("name");
   const typed = typeof raw === "string" ? raw.trim().slice(0, 40) : "";
   if (!canEditShop(shop.status)) return failed(t.errors.suspended, typed);
@@ -74,7 +74,7 @@ export async function addEmployeeAction(
 
 /** Fires an employee, unless the actor may not touch them (see canManageMember). */
 export async function removeEmployeeAction(shopSlug: string, formData: FormData): Promise<void> {
-  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "empleados"), { permission: "staff.manage" });
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "staff"), { permission: "staff.manage" });
   const playerUuid = formData.get("player");
   if (!isUuid(playerUuid) || !canEditShop(shop.status)) return;
 
@@ -86,7 +86,7 @@ export async function removeEmployeeAction(shopSlug: string, formData: FormData)
 
 /** Gives an employee another rank of the shop (same rules as hiring and firing). */
 export async function changeMemberRoleAction(shopSlug: string, formData: FormData): Promise<void> {
-  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "empleados"), { permission: "staff.manage" });
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "staff"), { permission: "staff.manage" });
   const playerUuid = formData.get("player");
   const roleId = formData.get("role");
   if (!isUuid(playerUuid) || !isUuid(roleId) || !canEditShop(shop.status)) return;

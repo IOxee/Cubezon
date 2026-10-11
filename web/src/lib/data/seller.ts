@@ -237,7 +237,7 @@ export async function getPanelAccess(playerUuid: string, slug: string): Promise<
 }
 
 /**
- * For the pages and actions of /panel/[tienda]: the logged-in player (or off to sign in) and the
+ * For the pages and actions of /panel/[shop]: the logged-in player (or off to sign in) and the
  * shop with that slug, if they own it or are one of its employees, with their permissions there
  * (shop_permissions_of). Anything else is a 404. `ownerOnly` (shop settings, public profile,
  * ranks) also 404s for employees, and `permission` for employees whose rank lacks it.

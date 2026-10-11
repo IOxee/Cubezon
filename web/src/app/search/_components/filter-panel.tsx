@@ -4,6 +4,7 @@ import { m } from "@/i18n";
 import { CATEGORY_KEYS } from "@/lib/categories";
 import type { ShopSummary } from "@/lib/data/shops";
 import { filtersKey, type SearchState } from "../search-state";
+import { keySlug } from "@/lib/url-slug";
 
 /** id of the filter form; the sort select of the toolbar joins it with form={FILTER_FORM_ID}. */
 export const FILTER_FORM_ID = "filtros";
@@ -26,7 +27,7 @@ export function FilterPanel({ state, shops }: { state: SearchState; shops: ShopS
         <Form
           id={FILTER_FORM_ID}
           key={filtersKey(state)}
-          action="/buscar"
+          action="/search"
           className="flex flex-col gap-5 border-t border-line p-4 lg:border-t-0"
         >
           <h2 className="label hidden text-ink lg:block">{t.title}</h2>
@@ -51,7 +52,7 @@ export function FilterPanel({ state, shops }: { state: SearchState; shops: ShopS
             <ul className="flex flex-col gap-1 text-sm">
               <li>
                 <label className="flex cursor-pointer items-center gap-2">
-                  <input type="radio" name="categoria" value="" defaultChecked={!state.category} className="accent-ink" />
+                  <input type="radio" name="category" value="" defaultChecked={!state.category} className="accent-ink" />
                   {t.anyCategory}
                 </label>
               </li>
@@ -60,8 +61,8 @@ export function FilterPanel({ state, shops }: { state: SearchState; shops: ShopS
                   <label className="flex cursor-pointer items-center gap-2">
                     <input
                       type="radio"
-                      name="categoria"
-                      value={m.categories[key].slug}
+                      name="category"
+                      value={keySlug(key)}
                       defaultChecked={state.category === key}
                       className="accent-ink"
                     />
@@ -77,7 +78,7 @@ export function FilterPanel({ state, shops }: { state: SearchState; shops: ShopS
               <label htmlFor="filtro-tienda" className="label">
                 {t.shop}
               </label>
-              <select id="filtro-tienda" name="tienda" defaultValue={state.shop ?? ""} className="input mt-1 text-sm">
+              <select id="filtro-tienda" name="shop" defaultValue={state.shop ?? ""} className="input mt-1 text-sm">
                 <option value="">{t.anyShop}</option>
                 {shops.map((shop) => (
                   <option key={shop.id} value={shop.slug}>
@@ -136,7 +137,7 @@ export function FilterPanel({ state, shops }: { state: SearchState; shops: ShopS
             <button type="submit" className="btn btn-ink btn-block">
               {t.apply}
             </button>
-            <Link href="/buscar" className="link text-sm">
+            <Link href="/search" className="link text-sm">
               {t.clear}
             </Link>
           </div>

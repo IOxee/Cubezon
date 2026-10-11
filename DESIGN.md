@@ -25,7 +25,7 @@ Excluded from the new style:
 
 Light and dark. Defaults to the system setting (`prefers-color-scheme`). Visitors can force system / light / dark with the selector in the top strip and in the footer; the choice is stored in the `cz-theme` cookie and applied by an inline script in `<head>` before first paint (reading it in the server layout would block the whole site with Cache Components). Technique: CSS variables on `:root` and `[data-theme="dark"]`, exposed to Tailwind 4 with `@theme inline` (`web/src/app/globals.css`).
 
-**Superadmin-configurable themes** (`/admin/temas`). The palette in this table is the base theme «Cartilla» (Spanish for a ration-book style printed booklet). A superadmin can create, activate and schedule alternative themes (e.g. seasonal or event themes) from the admin panel. Rules:
+**Superadmin-configurable themes** (`/admin/themes`). The palette in this table is the base theme «Cartilla» (Spanish for a ration-book style printed booklet). A superadmin can create, activate and schedule alternative themes (e.g. seasonal or event themes) from the admin panel. Rules:
 
 - A theme only overrides existing token values (light and dark); it adds no tokens and does not change shape, typography or spacing.
 - It is stored in the DB (only the changed values) and the layout injects it as a cached `<style>` block (tag `theme`) inside the static shell, so it doesn't flicker either. A scheduled theme takes precedence within its window; outside it, the manually activated one; if there is none, Cartilla.

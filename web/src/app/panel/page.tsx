@@ -39,7 +39,7 @@ export default function MyShopsPage() {
 async function MyShops() {
   const player = await requirePlayer("/panel");
   const shops = await getPanelShops(player.uuid);
-  if (shops.length === 0) redirect("/vender");
+  if (shops.length === 0) redirect("/sell");
 
   const ids = shops.map((shop) => shop.id);
   const [kpis, storage, slots] = await Promise.all([
@@ -103,7 +103,7 @@ function ShopCard({ shop, kpis, storage }: { shop: PanelShop; kpis?: ShopKpis; s
           </Link>
         ) : null}
         {shop.status === "REJECTED" && shop.role === "owner" ? (
-          <Link href={`/vender#tienda-${shop.slug}`} className="btn btn-sm">
+          <Link href={`/sell#shop-${shop.slug}`} className="btn btn-sm">
             {t.fixRequest}
           </Link>
         ) : null}
@@ -157,7 +157,7 @@ function RequestCard({ slots }: { slots: ShopSlots }) {
   }
   return (
     <Link
-      href="/vender"
+      href="/sell"
       className="lift flex h-full min-h-48 flex-col items-center justify-center gap-2 border-2 border-dashed border-edge bg-paper p-4 text-center"
     >
       <span className="squares p-2">

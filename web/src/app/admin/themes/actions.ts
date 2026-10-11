@@ -48,7 +48,7 @@ export async function saveThemeAction(themeId: string | null, _state: ActionStat
     const id = await createTheme({ name, tokens, startsAt, endsAt }, player.uuid);
     if (id === "duplicate") return fail(t.errors.duplicate);
     updateTag(THEME_TAG);
-    redirect(`/admin/temas/${id}?aviso=creado`);
+    redirect(`/admin/themes/${id}?notice=created`);
   }
 
   if (!isUuid(themeId)) return fail(t.errors.invalid);
@@ -97,5 +97,5 @@ export async function deleteThemeAction(_state: ActionState, formData: FormData)
 
   if (!(await deleteTheme(themeId))) return fail(t.errors.notFound);
   updateTag(THEME_TAG);
-  redirect("/admin/temas?aviso=borrado");
+  redirect("/admin/themes?notice=deleted");
 }

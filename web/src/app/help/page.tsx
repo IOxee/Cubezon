@@ -16,11 +16,11 @@ type SectionId = keyof typeof m.help.sections;
 
 /** Section order (the keys are the #anchors linked from the footer and other pages). */
 const SECTIONS: { id: SectionId; icon: string; command: string | null }[] = [
-  { id: "vincular", icon: "name_tag", command: m.commands.link },
-  { id: "comprar", icon: "chest", command: null },
-  { id: "recoger", icon: "barrel", command: m.commands.pickup },
-  { id: "vender", icon: "oak_sign", command: null },
-  { id: "depositar", icon: "hopper", command: m.commands.deposit },
+  { id: "link", icon: "name_tag", command: m.commands.link },
+  { id: "buy", icon: "chest", command: null },
+  { id: "pickup", icon: "barrel", command: m.commands.pickup },
+  { id: "sell", icon: "oak_sign", command: null },
+  { id: "deposit", icon: "hopper", command: m.commands.deposit },
 ];
 
 function placeholders(command: string | null) {
@@ -28,22 +28,22 @@ function placeholders(command: string | null) {
   return {
     command: command ? <Command>{command}</Command> : null,
     signIn: (
-      <Link href="/entrar" className="link font-semibold">
+      <Link href="/login" className="link font-semibold">
         {links.signIn}
       </Link>
     ),
     lockers: (
-      <Link href="/taquillas" className="link font-semibold">
+      <Link href="/lockers" className="link font-semibold">
         {links.lockers}
       </Link>
     ),
     orders: (
-      <Link href="/pedidos" className="link font-semibold">
+      <Link href="/orders" className="link font-semibold">
         {links.orders}
       </Link>
     ),
     sell: (
-      <Link href="/vender" className="link font-semibold">
+      <Link href="/sell" className="link font-semibold">
         {links.sell}
       </Link>
     ),
@@ -59,14 +59,14 @@ function HelpSection({ id, icon, command }: (typeof SECTIONS)[number]) {
   const section = m.help.sections[id];
   const values = placeholders(command);
   return (
-    <section id={id} aria-labelledby={`${id}-titulo`} className="card scroll-mt-4">
+    <section id={id} aria-labelledby={`${id}-title`} className="card scroll-mt-4">
       <div className="flex items-center gap-3 border-b-2 border-edge p-4">
         <span className="squares flex size-12 shrink-0 items-center justify-center border border-edge">
           <ItemIcon material={icon} size={32} />
         </span>
         <div>
           <p className="label">{section.label}</p>
-          <h2 id={`${id}-titulo`} className="text-xl">
+          <h2 id={`${id}-title`} className="text-xl">
             {section.title}
           </h2>
         </div>
@@ -109,14 +109,14 @@ async function CurrentMode() {
 function RoleplaySection() {
   const t = m.help.roleplay;
   return (
-    <section id={ROLEPLAY_ID} aria-labelledby={`${ROLEPLAY_ID}-titulo`} className="card scroll-mt-4">
+    <section id={ROLEPLAY_ID} aria-labelledby={`${ROLEPLAY_ID}-title`} className="card scroll-mt-4">
       <div className="flex flex-wrap items-center gap-3 border-b-2 border-edge p-4">
         <span className="squares flex size-12 shrink-0 items-center justify-center border border-edge">
           <ItemIcon material="paper" size={32} />
         </span>
         <div className="mr-auto">
           <p className="label">{t.label}</p>
-          <h2 id={`${ROLEPLAY_ID}-titulo`} className="text-xl">
+          <h2 id={`${ROLEPLAY_ID}-title`} className="text-xl">
             {t.title}
           </h2>
         </div>
@@ -184,7 +184,7 @@ export default function HelpPage() {
               </a>
             </li>
             <li>
-              <a href="#preguntas" className="link">
+              <a href="#faq" className="link">
                 {t.faq.label}
               </a>
             </li>
@@ -197,10 +197,10 @@ export default function HelpPage() {
           ))}
           <RoleplaySection />
 
-          <section id="preguntas" aria-labelledby="preguntas-titulo" className="scroll-mt-4">
+          <section id="faq" aria-labelledby="faq-title" className="scroll-mt-4">
             <div className="mb-4 border-b-2 border-edge pb-2">
               <p className="label">{t.faq.label}</p>
-              <h2 id="preguntas-titulo" className="text-xl">
+              <h2 id="faq-title" className="text-xl">
                 {t.faq.title}
               </h2>
             </div>

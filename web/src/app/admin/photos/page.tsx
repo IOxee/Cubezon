@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: m.admin.photos.title };
 const t = m.admin.photos;
 
 /** Product photos, newest first: any staff member can take one down. */
-export default function AdminPhotosPage(props: PageProps<"/admin/fotos">) {
+export default function AdminPhotosPage(props: PageProps<"/admin/photos">) {
   return (
     <Suspense fallback={<TableSkeleton />}>
       <Photos searchParams={props.searchParams} />
@@ -27,9 +27,9 @@ export default function AdminPhotosPage(props: PageProps<"/admin/fotos">) {
   );
 }
 
-async function Photos({ searchParams }: { searchParams: PageProps<"/admin/fotos">["searchParams"] }) {
+async function Photos({ searchParams }: { searchParams: PageProps<"/admin/photos">["searchParams"] }) {
   await requireStaff();
-  const page = parsePage((await searchParams).pagina);
+  const page = parsePage((await searchParams).page);
   const { photos, total } = await listListingPhotos(page);
   return (
     <>
@@ -48,7 +48,7 @@ async function Photos({ searchParams }: { searchParams: PageProps<"/admin/fotos"
           ))}
         </ul>
       )}
-      <Pagination page={page} pageCount={Math.ceil(total / LISTING_PHOTOS_PAGE_SIZE)} basePath="/admin/fotos" params={{}} />
+      <Pagination page={page} pageCount={Math.ceil(total / LISTING_PHOTOS_PAGE_SIZE)} basePath="/admin/photos" params={{}} />
     </>
   );
 }

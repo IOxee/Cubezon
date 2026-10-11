@@ -1,5 +1,5 @@
 /**
- * Plugin options the server owner changes from /admin/funciones (public.feature_settings, key =
+ * Plugin options the server owner changes from /admin/features (public.feature_settings, key =
  * config.yml path). Same closed list and ranges as the plugin's FeatureSetting.java, which checks
  * every value again before applying it. An empty field means "what config.yml says".
  */
@@ -89,6 +89,15 @@ export function parseFeatureForm(get: (name: string) => unknown, published: Feat
   const max = inForce(DELAY_MAX);
   const delays = typeof min === "number" && typeof max === "number" && min > max;
   return invalid.length > 0 || delays ? { ok: false, invalid, delays } : { ok: true, changes };
+}
+
+/**
+ * Whether a stored override is not in force yet (the plugin applies it on its next refresh). Unknown
+ * when the plugin never published its values: then it is not shown as pending.
+ */
+export function isFeaturePending(stored: string | undefined, inForce: FeatureValue | undefined): boolean {
+  if (stored === undefined || inForce === undefined) return false;
+  return typeof inForce === "boolean" ? stored !== String(inForce) : Number(stored) !== inForce;
 }
 
 /** plugin_settings.features (what the plugin has in force) → typed values; anything odd is dropped. */

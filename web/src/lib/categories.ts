@@ -1,4 +1,5 @@
 import { m } from "@/i18n";
+import { keyFromSlug } from "@/lib/url-slug";
 
 /** Catalog categories. The database computes them with public.material_category(material). */
 export const CATEGORY_KEYS = [
@@ -38,7 +39,7 @@ export function categoryName(key: CategoryKey): string {
   return m.categories[key].name;
 }
 
-/** URL slug (Spanish) -> key. */
+/** URL slug of ?category= (the key itself, see keySlug) -> key. */
 export function categoryFromSlug(slug: string | undefined): CategoryKey | null {
-  return CATEGORY_KEYS.find((key) => m.categories[key].slug === slug) ?? null;
+  return keyFromSlug(CATEGORY_KEYS, slug);
 }

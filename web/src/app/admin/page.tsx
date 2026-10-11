@@ -11,6 +11,7 @@ import { ORDER_STATUSES, STALE_PENDING_MINUTES, getAdminOverview } from "@/lib/d
 import { getOrdersMode } from "@/lib/data/roleplay";
 import { formatDateTime, formatInteger, serialOf } from "@/lib/format";
 import { orderStatusLabel } from "@/lib/order-display";
+import { keySlug } from "@/lib/url-slug";
 
 export const metadata: Metadata = { title: m.admin.overview.title };
 
@@ -69,7 +70,7 @@ async function Overview() {
         <Tile
           label={t.pendingShops}
           value={data.pendingShops}
-          href="/admin/tiendas"
+          href="/admin/shops"
           linkText={t.pendingShopsLink}
           highlight={data.pendingShops > 0}
         />
@@ -77,7 +78,7 @@ async function Overview() {
           label={t.activeLockers}
           value={data.lockers.active}
           detail={fmt(t.activeLockersOf, { total: formatInteger(data.lockers.total) })}
-          href="/admin/taquillas"
+          href="/admin/lockers"
           linkText={t.lockersLink}
         />
         <Tile label={t.players} value={data.players} detail={t.playersHint} />
@@ -93,7 +94,7 @@ async function Overview() {
       <section>
         <div className="mb-2 flex items-end justify-between gap-3">
           <h2 className="text-lg">{t.ordersTitle}</h2>
-          <Link href="/admin/pedidos" className="link text-sm font-semibold">
+          <Link href="/admin/orders" className="link text-sm font-semibold">
             {t.ordersLink} <span className="num text-ink-2">({formatInteger(totalOrders)})</span>
           </Link>
         </div>
@@ -101,7 +102,7 @@ async function Overview() {
           {ORDER_STATUSES.map((status) => (
             <li key={status}>
               <Link
-                href={`/admin/pedidos?estado=${m.admin.slugs.order[status]}`}
+                href={`/admin/orders?status=${keySlug(status)}`}
                 className="card-soft lift flex flex-col gap-1 px-3 py-2"
               >
                 <span className="label">{orderStatusLabel(status, { mode })}</span>
@@ -127,7 +128,7 @@ async function Overview() {
             <ul className="mt-1 grid gap-1 text-ink">
               {data.stuck.oldest.map((order) => (
                 <li key={order.id} className="flex flex-wrap items-baseline gap-x-3">
-                  <Link href={`/admin/pedidos/${order.id}`} className="link num font-semibold">
+                  <Link href={`/admin/orders/${order.id}`} className="link num font-semibold">
                     {serialOf(order.id)}
                   </Link>
                   <span className="num text-ink-2">{formatDateTime(order.createdAt)}</span>

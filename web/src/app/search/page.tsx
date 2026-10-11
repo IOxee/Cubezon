@@ -22,7 +22,7 @@ function pageTitle(state: SearchState, shop: ShopSummary | undefined): string {
   return t.allTitle;
 }
 
-export async function generateMetadata(props: PageProps<"/buscar">): Promise<Metadata> {
+export async function generateMetadata(props: PageProps<"/search">): Promise<Metadata> {
   const state = parseSearch(await props.searchParams);
   if (state.category) return { title: m.categories[state.category].name };
   if (state.q) return { title: fmt(m.catalog.search.queryTitle, { q: state.q }) };
@@ -57,7 +57,7 @@ function ActiveFilters({ state, shop }: { state: SearchState; shop: ShopSummary 
           </span>
         </Link>
       ))}
-      <Link href="/buscar" className="link text-xs">
+      <Link href="/search" className="link text-xs">
         {t.clear}
       </Link>
     </div>
@@ -68,10 +68,10 @@ function SortSelect({ state }: { state: SearchState }) {
   const t = m.catalog.search.sort;
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor="orden" className="label whitespace-nowrap">
+      <label htmlFor="sort" className="label whitespace-nowrap">
         {t.label}
       </label>
-      <AutoSubmitSelect key={state.sort} id="orden" name="orden" form={FILTER_FORM_ID} defaultValue={state.sort} className="input w-auto py-1 text-sm">
+      <AutoSubmitSelect key={state.sort} id="sort" name="sort" form={FILTER_FORM_ID} defaultValue={state.sort} className="input w-auto py-1 text-sm">
         {CATALOG_SORTS.map((sort) => (
           <option key={sort} value={sort}>
             {t.options[sort]}
@@ -87,7 +87,7 @@ function SortSelect({ state }: { state: SearchState }) {
   );
 }
 
-async function SearchResults({ searchParams }: { searchParams: PageProps<"/buscar">["searchParams"] }) {
+async function SearchResults({ searchParams }: { searchParams: PageProps<"/search">["searchParams"] }) {
   const t = m.catalog.search;
   const state = parseSearch(await searchParams);
   const [{ items, total }, shops] = await Promise.all([searchCatalog(toCatalogQuery(state)), getShopDirectory()]);
@@ -101,7 +101,7 @@ async function SearchResults({ searchParams }: { searchParams: PageProps<"/busca
       <Breadcrumbs
         items={[
           { label: m.catalog.breadcrumbs.home, href: "/" },
-          { label: m.catalog.breadcrumbs.catalog, href: "/buscar" },
+          { label: m.catalog.breadcrumbs.catalog, href: "/search" },
           ...(state.category ? [{ label: m.categories[state.category].name }] : []),
         ]}
       />
@@ -136,7 +136,7 @@ async function SearchResults({ searchParams }: { searchParams: PageProps<"/busca
               title={t.empty.title}
               body={t.empty.body}
               action={
-                <Link href="/buscar" className="btn">
+                <Link href="/search" className="btn">
                   {t.empty.cta}
                 </Link>
               }
@@ -166,7 +166,7 @@ function SearchSkeleton() {
   );
 }
 
-export default function SearchPage(props: PageProps<"/buscar">) {
+export default function SearchPage(props: PageProps<"/search">) {
   return (
     <Suspense fallback={<SearchSkeleton />}>
       <SearchResults searchParams={props.searchParams} />

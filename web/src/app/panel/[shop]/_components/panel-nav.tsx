@@ -10,11 +10,11 @@ import { panelPath } from "@/lib/seller/shops";
 /** Sections of the panel; `ownerOnly` ones are hidden from employees (and 404 for them). */
 const SECTIONS = [
   { segment: "", label: m.seller.panel.nav.overview, ownerOnly: false },
-  { segment: "productos", label: m.seller.panel.nav.listings, ownerOnly: false },
-  { segment: "pedidos", label: m.seller.panel.nav.orders, ownerOnly: false },
-  { segment: "empleados", label: m.roleplay.panel.nav, ownerOnly: false },
-  { segment: "rangos", label: m.roles.nav, ownerOnly: true },
-  { segment: "tienda", label: m.seller.panel.nav.shop, ownerOnly: true },
+  { segment: "products", label: m.seller.panel.nav.listings, ownerOnly: false },
+  { segment: "orders", label: m.seller.panel.nav.orders, ownerOnly: false },
+  { segment: "staff", label: m.roleplay.panel.nav, ownerOnly: false },
+  { segment: "ranks", label: m.roles.nav, ownerOnly: true },
+  { segment: "shop", label: m.seller.panel.nav.shop, ownerOnly: true },
 ] as const;
 
 function isActive(pathname: string | null, href: string, exact: boolean): boolean {

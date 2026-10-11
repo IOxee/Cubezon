@@ -53,7 +53,7 @@ function shopsSummary(statuses: readonly (typeof SHOP_STATUS_ORDER)[number][], e
 
 async function Account() {
   const t = m.account.account;
-  const player = await requirePlayer("/cuenta");
+  const player = await requirePlayer("/account");
   const overview = await getAccountOverview(player);
 
   const ordersBody = [
@@ -88,8 +88,8 @@ async function Account() {
             {t.shortcuts}
           </h2>
           <ul className="grid gap-3 sm:grid-cols-2">
-            <Shortcut href="/pedidos" icon="chest" title={t.orders.title} body={`${t.orders.body} ${ordersBody}`} />
-            <Shortcut href="/carrito" icon="bundle" title={t.cart.title} body={t.cart.body} />
+            <Shortcut href="/orders" icon="chest" title={t.orders.title} body={`${t.orders.body} ${ordersBody}`} />
+            <Shortcut href="/cart" icon="bundle" title={t.cart.title} body={t.cart.body} />
             {overview.shopStatuses.length > 0 || overview.employeeShops > 0 ? (
               <Shortcut
                 href="/panel"
@@ -98,7 +98,7 @@ async function Account() {
                 body={shopsSummary(overview.shopStatuses, overview.employeeShops)}
               />
             ) : (
-              <Shortcut href="/vender" icon="emerald" title={t.sell.title} body={t.sell.body} />
+              <Shortcut href="/sell" icon="emerald" title={t.sell.title} body={t.sell.body} />
             )}
             {player.role ? <Shortcut href="/admin" icon="command_block" title={t.admin.title} body={t.admin.body} /> : null}
           </ul>

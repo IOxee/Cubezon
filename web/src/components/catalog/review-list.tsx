@@ -52,7 +52,7 @@ export function ReviewList({
   page,
   title,
   showListing = false,
-  id = "valoraciones",
+  id = "reviews",
 }: {
   page: ReviewPage;
   title: string;

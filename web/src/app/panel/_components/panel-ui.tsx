@@ -39,20 +39,20 @@ export async function ShopPanelLink({
   className,
   children,
 }: {
-  params: Promise<{ tienda: string }>;
+  params: Promise<{ shop: string }>;
   segments?: string[];
   permission?: ShopPermission;
   className?: string;
   children: ReactNode;
 }) {
-  const { tienda } = await params;
+  const { shop: shopSlug } = await params;
   if (permission) {
     const player = await getCurrentPlayer();
-    const access = player ? await getPanelAccess(player.uuid, tienda) : null;
+    const access = player ? await getPanelAccess(player.uuid, shopSlug) : null;
     if (!access?.permissions.includes(permission)) return null;
   }
   return (
-    <Link href={panelPath(tienda, ...segments)} className={className}>
+    <Link href={panelPath(shopSlug, ...segments)} className={className}>
       {children}
     </Link>
   );

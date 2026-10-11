@@ -51,7 +51,7 @@ export const getCurrentPlayer = cache(async (): Promise<Player | null> => {
 /** For pages and actions that need a player: redirects to the login page otherwise. */
 export async function requirePlayer(nextPath: string): Promise<Player> {
   const player = await getCurrentPlayer();
-  if (!player) redirect(`/entrar?next=${encodeURIComponent(nextPath)}`);
+  if (!player) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   return player;
 }
 

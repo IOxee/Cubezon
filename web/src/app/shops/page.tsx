@@ -33,7 +33,7 @@ export default async function ShopsPage() {
           title={t.empty.title}
           body={t.empty.body}
           action={
-            <Link href="/vender" className="btn btn-primary">
+            <Link href="/sell" className="btn btn-primary">
               {t.empty.cta}
             </Link>
           }

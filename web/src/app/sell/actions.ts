@@ -28,7 +28,7 @@ export async function requestShopAction(
   _state: FormState<ShopField>,
   formData: FormData,
 ): Promise<FormState<ShopField>> {
-  const player = await requirePlayer("/vender");
+  const player = await requirePlayer("/sell");
   const parsed = parseShopForm(formData);
   if (!parsed.ok) return errorState(parsed.errors);
 
@@ -57,7 +57,7 @@ export async function resubmitShopAction(
   _state: FormState<ShopField>,
   formData: FormData,
 ): Promise<FormState<ShopField>> {
-  const player = await requirePlayer("/vender");
+  const player = await requirePlayer("/sell");
   if (!isUuid(shopId)) return errorState({}, "shopNotFound");
   const parsed = parseShopForm(formData);
   if (!parsed.ok) return errorState(parsed.errors);

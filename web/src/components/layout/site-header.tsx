@@ -5,11 +5,12 @@ import { fmt, m, plural } from "@/i18n";
 import { getCurrentPlayer } from "@/lib/auth/session";
 import { CART_COOKIE, cartUnits, parseCart } from "@/lib/cart";
 import { CATEGORY_ICON, CATEGORY_KEYS } from "@/lib/categories";
-import { signOutAction } from "@/app/cuenta/actions";
+import { signOutAction } from "@/app/account/actions";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { Dropdown } from "@/components/ui/dropdown";
 import { dropdownItem } from "@/components/ui/dropdown-item";
 import { ItemIcon } from "@/components/ui/item-icon";
+import { keySlug } from "@/lib/url-slug";
 
 export function Logo() {
   return (
@@ -25,14 +26,14 @@ export function Logo() {
 
 function SearchForm() {
   return (
-    <form action="/buscar" role="search" className="flex min-w-0 flex-1">
+    <form action="/search" role="search" className="flex min-w-0 flex-1">
       <label className="sr-only" htmlFor="header-scope">
         {m.header.search.scope}
       </label>
-      <select id="header-scope" name="categoria" defaultValue="" className="input w-auto max-w-36 border-r-0 text-sm">
+      <select id="header-scope" name="category" defaultValue="" className="input w-auto max-w-36 border-r-0 text-sm">
         <option value="">{m.header.search.allCategories}</option>
         {CATEGORY_KEYS.map((key) => (
-          <option key={key} value={m.categories[key].slug}>
+          <option key={key} value={keySlug(key)}>
             {m.categories[key].name}
           </option>
         ))}
@@ -70,13 +71,13 @@ function AccountMenu({ name, role }: { name: string; role: string | null }) {
         </span>
       }
     >
-      <Link href="/cuenta" className={dropdownItem}>
+      <Link href="/account" className={dropdownItem}>
         {t.account}
       </Link>
       <Link href="/panel" className={dropdownItem}>
         {t.shops}
       </Link>
-      <Link href="/vender" className={dropdownItem}>
+      <Link href="/sell" className={dropdownItem}>
         {t.sell}
       </Link>
       {role ? (
@@ -84,7 +85,7 @@ function AccountMenu({ name, role }: { name: string; role: string | null }) {
           {t.admin}
         </Link>
       ) : null}
-      <Link href="/ayuda" className={dropdownItem}>
+      <Link href="/help" className={dropdownItem}>
         {t.help}
       </Link>
       <div className="my-1 border-t border-line" />
@@ -103,16 +104,16 @@ function AccountLinks({ name, units, role }: { name: string | null; units: numbe
       {name ? (
         <AccountMenu name={name} role={role} />
       ) : (
-        <Link href="/entrar" className="btn btn-ghost flex-col items-start gap-0 leading-tight">
+        <Link href="/login" className="btn btn-ghost flex-col items-start gap-0 leading-tight">
           <span className="text-xs text-ink-3">{m.header.account.signInHint}</span>
           <span className="font-semibold">{m.header.account.signIn}</span>
         </Link>
       )}
-      <Link href="/pedidos" className="btn btn-ghost hidden flex-col items-start gap-0 leading-tight sm:flex">
+      <Link href="/orders" className="btn btn-ghost hidden flex-col items-start gap-0 leading-tight sm:flex">
         <span className="text-xs text-ink-3">{m.header.ordersHint}</span>
         <span className="font-semibold">{m.header.orders}</span>
       </Link>
-      <Link href="/carrito" className="btn btn-ghost font-semibold" aria-label={plural(units, m.header.cartCount)}>
+      <Link href="/cart" className="btn btn-ghost font-semibold" aria-label={plural(units, m.header.cartCount)}>
         {m.header.cart}
         <span className="badge badge-accent num">{units}</span>
       </Link>
@@ -164,7 +165,7 @@ export function SiteHeader() {
                   <ul className="grid gap-0.5 sm:w-96 sm:grid-cols-2">
                     {CATEGORY_KEYS.map((key) => (
                       <li key={key}>
-                        <Link href={`/buscar?categoria=${m.categories[key].slug}`} className={dropdownItem}>
+                        <Link href={`/search?category=${keySlug(key)}`} className={dropdownItem}>
                           <ItemIcon material={CATEGORY_ICON[key]} size={20} />
                           {m.categories[key].name}
                         </Link>
@@ -174,13 +175,13 @@ export function SiteHeader() {
                 </Dropdown>
               </li>
               <li>
-                <Link href="/buscar" className="btn btn-ghost btn-sm font-semibold">
+                <Link href="/search" className="btn btn-ghost btn-sm font-semibold">
                   {m.nav.all}
                 </Link>
               </li>
               {CATEGORY_KEYS.slice(0, 5).map((key) => (
                 <li key={key} className="hidden xl:block">
-                  <Link href={`/buscar?categoria=${m.categories[key].slug}`} className="btn btn-ghost btn-sm">
+                  <Link href={`/search?category=${keySlug(key)}`} className="btn btn-ghost btn-sm">
                     {m.categories[key].name}
                   </Link>
                 </li>
@@ -190,19 +191,19 @@ export function SiteHeader() {
 
           {/* The rest of the site: places and help, set apart from the catalog. */}
           <nav aria-label={m.a11y.siteNav} className="ml-auto flex items-center gap-1 border-l-2 border-line pl-3">
-            <Link href="/tiendas" className="btn btn-ghost btn-sm gap-1.5">
+            <Link href="/shops" className="btn btn-ghost btn-sm gap-1.5">
               <ItemIcon material="barrel" size={16} />
               {m.nav.shops}
             </Link>
-            <Link href="/taquillas" className="btn btn-ghost btn-sm gap-1.5">
+            <Link href="/lockers" className="btn btn-ghost btn-sm gap-1.5">
               <ItemIcon material="chest" size={16} />
               {m.nav.lockers}
             </Link>
-            <Link href="/ayuda" className="btn btn-ghost btn-sm gap-1.5">
+            <Link href="/help" className="btn btn-ghost btn-sm gap-1.5">
               <ItemIcon material="book" size={16} />
               {m.nav.help}
             </Link>
-            <Link href="/vender" className="btn btn-sm ml-1 font-semibold">
+            <Link href="/sell" className="btn btn-sm ml-1 font-semibold">
               {m.nav.sell}
             </Link>
           </nav>

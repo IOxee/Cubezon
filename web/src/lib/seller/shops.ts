@@ -74,7 +74,7 @@ export function isShopSlotsExceeded(error: { code?: string; message?: string } |
 
 /**
  * Panel URL of a shop, one path segment per argument:
- * panelPath("minas-paco", "productos", id) -> "/panel/minas-paco/productos/<id>".
+ * panelPath("minas-paco", "products", id) -> "/panel/minas-paco/products/<id>".
  */
 export function panelPath(slug: string, ...segments: string[]): string {
   return ["/panel", ...[slug, ...segments].filter(Boolean).map(encodeURIComponent)].join("/");

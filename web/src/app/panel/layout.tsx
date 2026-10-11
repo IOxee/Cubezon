@@ -5,8 +5,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Seller panel: /panel lists the player's shops and /panel/[tienda] is the panel of one of them
- * (with its own side menu in [tienda]/layout.tsx). Private pages, kept out of search engines.
+ * Seller panel: /panel lists the player's shops and /panel/[shop] is the panel of one of them
+ * (with its own side menu in [shop]/layout.tsx). Private pages, kept out of search engines.
  */
 export default function PanelLayout({ children }: LayoutProps<"/panel">) {
   return children;

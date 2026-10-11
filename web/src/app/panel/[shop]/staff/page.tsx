@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: m.roleplay.employees.metaTitle };
 
 const t = m.roleplay.employees;
 
-type Props = PageProps<"/panel/[tienda]/empleados">;
+type Props = PageProps<"/panel/[shop]/staff">;
 
 /**
  * Employees of one shop (shop_members) and their ranks. The whole staff sees the list (as in the
@@ -38,8 +38,8 @@ export default function EmployeesPage({ params }: Props) {
 }
 
 async function Employees({ params }: Pick<Props, "params">) {
-  const { tienda } = await params;
-  const { player, shop } = await requireSellerShop(tienda, panelPath(tienda, "empleados"));
+  const { shop: shopSlug } = await params;
+  const { player, shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "staff"));
   const [members, roles, mode, maxMemberships] = await Promise.all([
     getShopMembers(shop.id),
     getShopRoles(shop.id),

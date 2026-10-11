@@ -18,11 +18,11 @@ export const metadata: Metadata = { title: m.admin.themes.title };
 
 const t = m.admin.themes;
 
-export default function AdminThemesPage(props: PageProps<"/admin/temas">) {
+export default function AdminThemesPage(props: PageProps<"/admin/themes">) {
   return (
     <>
       <AdminPageHeader title={t.title} intro={t.intro}>
-        <Link href="/admin/temas/nuevo" className="btn btn-primary btn-sm">
+        <Link href="/admin/themes/new" className="btn btn-primary btn-sm">
           {t.newTheme}
         </Link>
       </AdminPageHeader>
@@ -44,10 +44,10 @@ function Swatches({ set }: { set: TokenSet }) {
   );
 }
 
-async function ThemeList({ searchParams }: { searchParams: PageProps<"/admin/temas">["searchParams"] }) {
+async function ThemeList({ searchParams }: { searchParams: PageProps<"/admin/themes">["searchParams"] }) {
   await requireStaff("SUPERADMIN");
   const [themes, currentId, params] = await Promise.all([listThemes(), getCurrentThemeId(), searchParams]);
-  const notice = params.aviso === "borrado" ? t.done.deleted : null;
+  const notice = params.notice === "deleted" ? t.done.deleted : null;
   const manualActive = themes.some((theme) => theme.isActive);
 
   return (
@@ -94,7 +94,7 @@ function ThemeCard({ theme, inForce }: { theme: ThemeRecord; inForce: boolean })
       </div>
       <div className="grid min-w-0 flex-1 gap-1">
         <h2 className="flex flex-wrap items-center gap-2 text-lg">
-          <Link href={`/admin/temas/${theme.id}`} className="hover:underline">
+          <Link href={`/admin/themes/${theme.id}`} className="hover:underline">
             {theme.name}
           </Link>
           {inForce ? <span className="badge badge-accent">{t.badges.inForce}</span> : null}
@@ -113,7 +113,7 @@ function ThemeCard({ theme, inForce }: { theme: ThemeRecord; inForce: boolean })
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={`/admin/temas/${theme.id}`} className="btn btn-sm">
+        <Link href={`/admin/themes/${theme.id}`} className="btn btn-sm">
           {t.actions.edit}
         </Link>
         {theme.isActive ? (

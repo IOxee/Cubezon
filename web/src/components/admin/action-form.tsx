@@ -35,7 +35,9 @@ export function ActionForm({
     if (state.status !== "error" || !form || !submitted.current) return;
     for (const [name, value] of submitted.current) {
       const field = form.elements.namedItem(name);
-      if (
+      if (field instanceof RadioNodeList) {
+        field.value = typeof value === "string" ? value : "";
+      } else if (
         (field instanceof HTMLInputElement && field.type !== "hidden") ||
         field instanceof HTMLTextAreaElement ||
         field instanceof HTMLSelectElement

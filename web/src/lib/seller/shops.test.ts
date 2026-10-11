@@ -75,7 +75,7 @@ describe("isShopSlotsExceeded", () => {
 describe("panelPath", () => {
   it("builds the panel URL of a shop", () => {
     expect(panelPath("minas-paco")).toBe("/panel/minas-paco");
-    expect(panelPath("minas-paco", "productos", "nuevo")).toBe("/panel/minas-paco/productos/nuevo");
+    expect(panelPath("minas-paco", "products", "new")).toBe("/panel/minas-paco/products/new");
   });
 
   it("skips empty segments and encodes each one", () => {

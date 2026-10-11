@@ -29,10 +29,10 @@ import { ReviewForm } from "./_components/review-form";
 
 export const metadata: Metadata = { title: m.account.order.metaTitle };
 
-export default function OrderPage(props: PageProps<"/pedidos/[id]">) {
+export default function OrderPage(props: PageProps<"/orders/[id]">) {
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/pedidos" className="link self-start text-sm">
+      <Link href="/orders" className="link self-start text-sm">
         ← {m.account.order.back}
       </Link>
       <Suspense fallback={<OrderSkeleton />}>
@@ -42,10 +42,10 @@ export default function OrderPage(props: PageProps<"/pedidos/[id]">) {
   );
 }
 
-async function Order({ params }: { params: PageProps<"/pedidos/[id]">["params"] }) {
+async function Order({ params }: { params: PageProps<"/orders/[id]">["params"] }) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
-  const player = await requirePlayer(`/pedidos/${id}`);
+  const player = await requirePlayer(`/orders/${id}`);
   const [order, mode] = await Promise.all([getMyOrder(player, id.toLowerCase()), getOrdersMode()]);
   if (!order) notFound();
 
@@ -120,7 +120,7 @@ async function Order({ params }: { params: PageProps<"/pedidos/[id]">["params"] 
                 <CommandText template={t.pickupHow} command={m.commands.pickup} />
               </p>
               {!order.locker.active ? <Notice tone="danger">{t.lockerInactive}</Notice> : null}
-              <Link href="/taquillas" className="link self-start text-sm">
+              <Link href="/lockers" className="link self-start text-sm">
                 {t.lockersLink}
               </Link>
             </section>

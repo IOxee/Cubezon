@@ -16,7 +16,7 @@ import { adminDb, dbError } from "@/lib/supabase/server";
 
 export type { ShopSlots };
 
-/** Players per page in /admin/jugadores. */
+/** Players per page in /admin/players. */
 export const PLAYER_SLOTS_PAGE_SIZE = 50;
 
 /** No player row (it cannot own shops either): no slot to use. */

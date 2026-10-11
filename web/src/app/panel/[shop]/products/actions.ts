@@ -38,7 +38,7 @@ export async function saveListingAction(
   const listingId = typeof rawId === "string" && rawId !== "" ? rawId : null;
   const { shop } = await requireSellerShop(
     shopSlug,
-    listingId ? panelPath(shopSlug, "productos", listingId) : panelPath(shopSlug, "productos", "nuevo"),
+    listingId ? panelPath(shopSlug, "products", listingId) : panelPath(shopSlug, "products", "new"),
     { permission: "products.manage" },
   );
   if (!canEditShop(shop.status)) return errorState({}, "suspended");
@@ -79,7 +79,7 @@ export async function saveListingAction(
   }
 
   updateCatalog(shop, current ? savedId : null);
-  redirect(`${panelPath(shop.slug, "productos")}?aviso=${current ? "guardado" : "creado"}`);
+  redirect(`${panelPath(shop.slug, "products")}?notice=${current ? "saved" : "created"}`);
 }
 
 const STATUSES: readonly ListingStatus[] = ["ACTIVE", "PAUSED", "REMOVED"];
@@ -88,7 +88,7 @@ const STATUSES: readonly ListingStatus[] = ["ACTIVE", "PAUSED", "REMOVED"];
 export async function changeListingStatusAction(shopSlug: string, formData: FormData): Promise<void> {
   const id = formData.get("id");
   const status = formData.get("status");
-  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "productos"), { permission: "products.manage" });
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "products"), { permission: "products.manage" });
   if (!isUuid(id) || !STATUSES.includes(status as ListingStatus) || !canEditShop(shop.status)) return;
 
   const listing = await getShopListing(shop.id, id);
@@ -103,10 +103,10 @@ export async function changeListingStatusAction(shopSlug: string, formData: Form
 /** Brings a removed listing of the shop back (paused) and opens it so the seller can review it. */
 export async function restoreListingAction(shopSlug: string, formData: FormData): Promise<void> {
   const id = formData.get("id");
-  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "productos"), { permission: "products.manage" });
+  const { shop } = await requireSellerShop(shopSlug, panelPath(shopSlug, "products"), { permission: "products.manage" });
   if (!isUuid(id) || !canEditShop(shop.status)) return;
   if (!(await restoreListing(shop.id, id))) return;
 
   updateCatalog(shop, id);
-  redirect(`${panelPath(shop.slug, "productos", id)}?aviso=recuperado`);
+  redirect(`${panelPath(shop.slug, "products", id)}?notice=restored`);
 }

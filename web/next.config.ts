@@ -1,14 +1,47 @@
 import type { NextConfig } from "next";
 
+/** Old Spanish URL -> English one. Every route moved to English; old links keep working. */
+const LEGACY_PATHS: [from: string, to: string][] = [
+  ["/admin/equipo", "/admin/team"],
+  ["/admin/fotos", "/admin/photos"],
+  ["/admin/funciones", "/admin/features"],
+  ["/admin/jugadores", "/admin/players"],
+  ["/admin/pedidos", "/admin/orders"],
+  ["/admin/taquillas", "/admin/lockers"],
+  ["/admin/temas/nuevo", "/admin/themes/new"],
+  ["/admin/temas", "/admin/themes"],
+  ["/admin/tiendas", "/admin/shops"],
+  ["/ayuda", "/help"],
+  ["/buscar", "/search"],
+  ["/caja", "/checkout"],
+  ["/carrito", "/cart"],
+  ["/cuenta", "/account"],
+  ["/entrar", "/login"],
+  ["/pedidos", "/orders"],
+  ["/taquillas", "/lockers"],
+  ["/tiendas", "/shops"],
+  ["/vender", "/sell"],
+  // "Anuncios" were renamed "productos" before the routes moved to English.
+  ["/panel/:shop/anuncios/nuevo", "/panel/:shop/products/new"],
+  ["/panel/:shop/anuncios", "/panel/:shop/products"],
+  ["/panel/:shop/productos/nuevo", "/panel/:shop/products/new"],
+  ["/panel/:shop/productos", "/panel/:shop/products"],
+  ["/panel/:shop/empleados", "/panel/:shop/staff"],
+  ["/panel/:shop/pedidos", "/panel/:shop/orders"],
+  ["/panel/:shop/rangos", "/panel/:shop/ranks"],
+  ["/panel/:shop/tienda", "/panel/:shop/shop"],
+];
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
-  // "Anuncios" are called "productos" now (same as in the game): keep the old panel links working.
   async redirects() {
-    return [
-      { source: "/panel/:tienda/anuncios", destination: "/panel/:tienda/productos", permanent: true },
-      { source: "/panel/:tienda/anuncios/:path*", destination: "/panel/:tienda/productos/:path*", permanent: true },
-    ];
+    // ":path*" also matches nothing, so each entry covers the page itself and everything below it.
+    return LEGACY_PATHS.map(([from, to]) => ({
+      source: `${from}/:path*`,
+      destination: `${to}/:path*`,
+      permanent: true,
+    }));
   },
   experimental: {
     serverActions: {

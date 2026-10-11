@@ -23,10 +23,10 @@ export const metadata: Metadata = { title: m.admin.order.title };
 
 const t = m.admin.order;
 
-export default function AdminOrderPage(props: PageProps<"/admin/pedidos/[id]">) {
+export default function AdminOrderPage(props: PageProps<"/admin/orders/[id]">) {
   return (
     <>
-      <Link href="/admin/pedidos" className="link mb-3 inline-block text-sm font-semibold">
+      <Link href="/admin/orders" className="link mb-3 inline-block text-sm font-semibold">
         {t.back}
       </Link>
       <Suspense fallback={<TilesSkeleton />}>
@@ -58,7 +58,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-async function OrderDetail({ params }: { params: PageProps<"/admin/pedidos/[id]">["params"] }) {
+async function OrderDetail({ params }: { params: PageProps<"/admin/orders/[id]">["params"] }) {
   await requireStaff();
   const { id } = await params;
   if (!isUuid(id)) notFound();

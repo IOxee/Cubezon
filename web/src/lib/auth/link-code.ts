@@ -6,7 +6,7 @@ export function normalizeLinkCode(raw: unknown): string | null {
 }
 
 /** Only relative paths inside the site, to avoid open redirects after login. */
-export function safeNextPath(raw: unknown, fallback = "/cuenta"): string {
+export function safeNextPath(raw: unknown, fallback = "/account"): string {
   if (typeof raw !== "string" || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
     return fallback;
   }

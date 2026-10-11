@@ -29,7 +29,7 @@ import { CheckoutForm } from "./_components/checkout-form";
 
 export const metadata: Metadata = { title: m.shopping.checkout.metaTitle };
 
-export default function CheckoutPage(props: PageProps<"/caja">) {
+export default function CheckoutPage(props: PageProps<"/checkout">) {
   const t = m.shopping.checkout;
   return (
     <div className="flex flex-col gap-6">
@@ -50,17 +50,17 @@ function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-async function Checkout({ searchParams }: { searchParams: PageProps<"/caja">["searchParams"] }) {
+async function Checkout({ searchParams }: { searchParams: PageProps<"/checkout">["searchParams"] }) {
   const t = m.shopping.checkout;
   const params = await searchParams;
 
-  // "Buy now" from a product page (?producto=&unidades=) or the whole cart.
-  const listingParam = first(params.producto);
+  // "Buy now" from a product page (?product=&units=) or the whole cart.
+  const listingParam = first(params.product);
   const single: CartLine | null = isUuid(listingParam)
-    ? { listingId: listingParam.toLowerCase(), units: parseUnits(first(params.unidades)) ?? 1 }
+    ? { listingId: listingParam.toLowerCase(), units: parseUnits(first(params.units)) ?? 1 }
     : null;
   const player = await requirePlayer(
-    single ? `/caja?producto=${single.listingId}&unidades=${single.units}` : "/caja",
+    single ? `/checkout?product=${single.listingId}&units=${single.units}` : "/checkout",
   );
   const requested = single ? [single] : parseCart((await cookies()).get(CART_COOKIE)?.value);
 
@@ -71,7 +71,7 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/caja">["se
         body={t.empty.body}
         icon="chest"
         action={
-          <Link href="/buscar" className="btn btn-primary">
+          <Link href="/search" className="btn btn-primary">
             {t.empty.cta}
           </Link>
         }
@@ -136,7 +136,7 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/caja">["se
         <div className="border-t-2 border-edge p-4">
           <Notice tone="danger">
             {single ? t.fixSingle : t.fixInCart}{" "}
-            <Link href={single ? `/p/${single.listingId}` : "/carrito"} className="link font-semibold">
+            <Link href={single ? `/p/${single.listingId}` : "/cart"} className="link font-semibold">
               {single ? t.backToProduct : t.backToCart}
             </Link>
           </Notice>
@@ -211,7 +211,7 @@ async function Checkout({ searchParams }: { searchParams: PageProps<"/caja">["se
       />
       {!single ? (
         <p className="text-sm">
-          <Link href="/carrito" className="link">
+          <Link href="/cart" className="link">
             {t.backToCart}
           </Link>
         </p>

@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: m.account.signIn.metaTitle };
 
 const STEP_ICONS = ["grass_block", "command_block", "tripwire_hook"] as const;
 
-export default function SignInPage(props: PageProps<"/entrar">) {
+export default function SignInPage(props: PageProps<"/login">) {
   const t = m.account.signIn;
   return (
     <div className="mx-auto grid max-w-5xl items-start gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
@@ -55,7 +55,7 @@ export default function SignInPage(props: PageProps<"/entrar">) {
   );
 }
 
-async function SignInPanel({ searchParams }: { searchParams: PageProps<"/entrar">["searchParams"] }) {
+async function SignInPanel({ searchParams }: { searchParams: PageProps<"/login">["searchParams"] }) {
   const t = m.account.signIn;
   const [{ next }, player] = await Promise.all([searchParams, getCurrentPlayer()]);
   const nextPath = safeNextPath(Array.isArray(next) ? next[0] : next);
@@ -65,7 +65,7 @@ async function SignInPanel({ searchParams }: { searchParams: PageProps<"/entrar"
       {player ? (
         <Notice tone="success">
           <p>{fmt(t.alreadyIn, { name: player.name })}</p>
-          <Link href="/cuenta" className="link mt-1 inline-block font-semibold">
+          <Link href="/account" className="link mt-1 inline-block font-semibold">
             {t.goToAccount}
           </Link>
           <p className="mt-2 text-ink-2">{t.switchAccount}</p>

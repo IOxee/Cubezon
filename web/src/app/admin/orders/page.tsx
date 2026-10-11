@@ -21,18 +21,19 @@ import {
 } from "@/lib/data/admin";
 import { formatDateTime, serialOf } from "@/lib/format";
 import { inkStyle } from "@/lib/inks";
+import { keyFromSlug, keySlug } from "@/lib/url-slug";
 
 export const metadata: Metadata = { title: m.admin.orders.title };
 
 const t = m.admin.orders;
 
-type SearchParams = PageProps<"/admin/pedidos">["searchParams"];
+type SearchParams = PageProps<"/admin/orders">["searchParams"];
 
 function statusFromSlug(slug: string): OrderStatus | null {
-  return ORDER_STATUSES.find((status) => m.admin.slugs.order[status] === slug) ?? null;
+  return keyFromSlug(ORDER_STATUSES, slug);
 }
 
-export default function AdminOrdersPage(props: PageProps<"/admin/pedidos">) {
+export default function AdminOrdersPage(props: PageProps<"/admin/orders">) {
   return (
     <>
       <AdminPageHeader title={t.title} intro={t.intro} />
@@ -48,7 +49,7 @@ function Filters({ status, q }: { status: OrderStatus | null; q: string }) {
     // Keyed by the filters so "clear" also empties the fields.
     <Form
       key={`${status ?? ""}|${q}`}
-      action="/admin/pedidos"
+      action="/admin/orders"
       role="search"
       aria-label={t.filters.label}
       className="mb-4 flex flex-wrap items-end gap-2"
@@ -57,10 +58,10 @@ function Filters({ status, q }: { status: OrderStatus | null; q: string }) {
         <label htmlFor="orders-status" className="label">
           {t.filters.status}
         </label>
-        <select id="orders-status" name="estado" defaultValue={status ? m.admin.slugs.order[status] : ""} className="input mt-1 text-sm">
+        <select id="orders-status" name="status" defaultValue={status ? keySlug(status) : ""} className="input mt-1 text-sm">
           <option value="">{t.filters.allStatuses}</option>
           {ORDER_STATUSES.map((option) => (
-            <option key={option} value={m.admin.slugs.order[option]}>
+            <option key={option} value={keySlug(option)}>
               {m.status.order[option]}
             </option>
           ))}
@@ -84,7 +85,7 @@ function Filters({ status, q }: { status: OrderStatus | null; q: string }) {
         {t.filters.submit}
       </button>
       {status || q ? (
-        <Link href="/admin/pedidos" className="btn btn-ghost">
+        <Link href="/admin/orders" className="btn btn-ghost">
           {t.filters.clear}
         </Link>
       ) : null}
@@ -95,9 +96,9 @@ function Filters({ status, q }: { status: OrderStatus | null; q: string }) {
 async function OrdersList({ searchParams }: { searchParams: SearchParams }) {
   await requireStaff();
   const params = await searchParams;
-  const status = statusFromSlug(firstParam(params.estado));
+  const status = statusFromSlug(firstParam(params.status));
   const q = firstParam(params.q).trim().slice(0, 40);
-  const page = parsePage(params.pagina);
+  const page = parsePage(params.page);
 
   const { orders, total } = await listOrders({ status, q, page });
   const filtered = Boolean(status || q);
@@ -133,7 +134,7 @@ async function OrdersList({ searchParams }: { searchParams: SearchParams }) {
             {orders.map((order) => (
               <tr key={order.id} className="hover:bg-paper">
                 <td className={td}>
-                  <Link href={`/admin/pedidos/${order.id}`} className="link num font-semibold whitespace-nowrap">
+                  <Link href={`/admin/orders/${order.id}`} className="link num font-semibold whitespace-nowrap">
                     {serialOf(order.id)}
                   </Link>
                 </td>
@@ -174,8 +175,8 @@ async function OrdersList({ searchParams }: { searchParams: SearchParams }) {
       <Pagination
         page={page}
         pageCount={Math.ceil(total / ADMIN_PAGE_SIZE)}
-        basePath="/admin/pedidos"
-        params={{ estado: status ? m.admin.slugs.order[status] : "", q }}
+        basePath="/admin/orders"
+        params={{ status: status ? keySlug(status) : "", q }}
       />
     </>
   );

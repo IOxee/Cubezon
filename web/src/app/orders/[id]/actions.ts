@@ -19,7 +19,7 @@ export async function saveReviewAction(_prev: ReviewState, formData: FormData): 
   const t = m.account.order.review.errors;
   const orderId = formData.get("orderId");
   if (!isUuid(orderId)) return { status: "error", message: t.notAllowed };
-  const player = await requirePlayer(`/pedidos/${orderId}`);
+  const player = await requirePlayer(`/orders/${orderId}`);
 
   const rating = parseRating(formData.get("rating"));
   if (rating === null) return { status: "error", message: t.rating };

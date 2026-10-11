@@ -6,33 +6,33 @@ const COLUMNS = [
   {
     title: m.footer.columns.buy,
     links: [
-      { href: "/buscar", text: m.footer.links.catalog },
-      { href: "/tiendas", text: m.footer.links.shops },
-      { href: "/taquillas", text: m.footer.links.lockers },
+      { href: "/search", text: m.footer.links.catalog },
+      { href: "/shops", text: m.footer.links.shops },
+      { href: "/lockers", text: m.footer.links.lockers },
     ],
   },
   {
     title: m.footer.columns.sell,
     links: [
-      { href: "/vender", text: m.footer.links.sell },
+      { href: "/sell", text: m.footer.links.sell },
       { href: "/panel", text: m.footer.links.panel },
-      { href: "/ayuda#depositar", text: m.footer.links.deposit },
+      { href: "/help#deposit", text: m.footer.links.deposit },
     ],
   },
   {
     title: m.footer.columns.help,
     links: [
-      { href: "/ayuda", text: m.footer.links.howItWorks },
-      { href: "/ayuda#vincular", text: m.footer.links.link },
-      { href: "/ayuda#recoger", text: m.footer.links.pickup },
+      { href: "/help", text: m.footer.links.howItWorks },
+      { href: "/help#link", text: m.footer.links.link },
+      { href: "/help#pickup", text: m.footer.links.pickup },
     ],
   },
   {
     title: m.footer.columns.account,
     links: [
-      { href: "/cuenta", text: m.footer.links.account },
-      { href: "/pedidos", text: m.footer.links.orders },
-      { href: "/carrito", text: m.footer.links.cart },
+      { href: "/account", text: m.footer.links.account },
+      { href: "/orders", text: m.footer.links.orders },
+      { href: "/cart", text: m.footer.links.cart },
     ],
   },
 ];

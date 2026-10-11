@@ -48,7 +48,7 @@ async function CartContents() {
         body={t.empty.body}
         icon="chest"
         action={
-          <Link href="/buscar" className="btn btn-primary">
+          <Link href="/search" className="btn btn-primary">
             {t.empty.cta}
           </Link>
         }
@@ -143,11 +143,11 @@ async function CartContents() {
             {t.checkout}
           </span>
         ) : (
-          <Link href="/caja" className="btn btn-primary btn-lg btn-block">
+          <Link href="/checkout" className="btn btn-primary btn-lg btn-block">
             {t.checkout}
           </Link>
         )}
-        <Link href="/buscar" className="link text-center text-sm">
+        <Link href="/search" className="link text-center text-sm">
           {t.continueShopping}
         </Link>
       </aside>

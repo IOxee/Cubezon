@@ -16,7 +16,7 @@ export default function NewThemePage() {
   return (
     <>
       <AdminPageHeader title={t.newTitle} intro={t.intro}>
-        <Link href="/admin/temas" className="link text-sm">
+        <Link href="/admin/themes" className="link text-sm">
           {t.back}
         </Link>
       </AdminPageHeader>

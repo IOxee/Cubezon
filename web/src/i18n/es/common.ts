@@ -112,16 +112,16 @@ export const common = {
   },
 
   categories: {
-    blocks: { name: "Bloques", slug: "bloques", blurb: "Para construir lo que sea" },
-    tools: { name: "Herramientas", slug: "herramientas", blurb: "Picos, hachas y compañía" },
-    combat: { name: "Combate", slug: "combate", blurb: "Espadas, arcos y escudos" },
-    armor: { name: "Armaduras", slug: "armaduras", blurb: "De cuero a netherita" },
-    food: { name: "Comida", slug: "comida", blurb: "Para no morir de hambre" },
-    magic: { name: "Pociones y magia", slug: "magia", blurb: "Libros, pociones y tótems" },
-    redstone: { name: "Redstone", slug: "redstone", blurb: "Circuitos y mecanismos" },
-    decoration: { name: "Decoración", slug: "decoracion", blurb: "Que se note que es tu casa" },
-    materials: { name: "Materiales", slug: "materiales", blurb: "Lingotes, gemas y polvos" },
-    misc: { name: "Otros", slug: "otros", blurb: "Lo que no cabe en otro cajón" },
+    blocks: { name: "Bloques", blurb: "Para construir lo que sea" },
+    tools: { name: "Herramientas", blurb: "Picos, hachas y compañía" },
+    combat: { name: "Combate", blurb: "Espadas, arcos y escudos" },
+    armor: { name: "Armaduras", blurb: "De cuero a netherita" },
+    food: { name: "Comida", blurb: "Para no morir de hambre" },
+    magic: { name: "Pociones y magia", blurb: "Libros, pociones y tótems" },
+    redstone: { name: "Redstone", blurb: "Circuitos y mecanismos" },
+    decoration: { name: "Decoración", blurb: "Que se note que es tu casa" },
+    materials: { name: "Materiales", blurb: "Lingotes, gemas y polvos" },
+    misc: { name: "Otros", blurb: "Lo que no cabe en otro cajón" },
   },
 
   worlds: {

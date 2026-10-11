@@ -34,11 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeStyle />
       </head>
       <body id="top" className="flex min-h-dvh flex-col">
-        <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 btn btn-ink">
+        <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 btn btn-ink">
           {m.a11y.skipToContent}
         </a>
         <SiteHeader />
-        <main id="contenido" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
+        <main id="content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
           {children}
         </main>
         <SiteFooter />
