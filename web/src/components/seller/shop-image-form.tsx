@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useState, type ChangeEvent } from "react";
-import { fmt, m } from "@/i18n";
+import { fmt } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 import { inkStyle } from "@/lib/inks";
 import {
   checkImageFile,
@@ -12,8 +13,6 @@ import {
   type ShopMediaKind,
 } from "@/lib/shop-media";
 import { ShopSeal } from "@/components/ui/shop-mark";
-
-const t = m.seller.images;
 
 /**
  * Upload, replace or remove the shop's logo or banner. The chosen file is checked here (type
@@ -35,6 +34,8 @@ export function ShopImageForm({
   name: string;
   ink: string;
 }) {
+  const m = useMessages();
+  const t = m.seller.images;
   const [state, formAction, pending] = useActionState(action, IDLE_IMAGE_STATE);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileError, setFileError] = useState<ShopImageError | null>(null);

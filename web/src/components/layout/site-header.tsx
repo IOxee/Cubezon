@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
-import { fmt, m, plural } from "@/i18n";
+import { fmt, plural, type Messages } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 import { getCurrentPlayer } from "@/lib/auth/session";
 import { CART_COOKIE, cartUnits, parseCart } from "@/lib/cart";
 import { CATEGORY_ICON, CATEGORY_KEYS } from "@/lib/categories";
-import { signOutAction } from "@/app/account/actions";
+import { signOutAction } from "@/app/[lang]/account/actions";
+import { LocaleSwitcher } from "@/components/locale/locale-switcher";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { Dropdown } from "@/components/ui/dropdown";
 import { dropdownItem } from "@/components/ui/dropdown-item";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { keySlug } from "@/lib/url-slug";
 
-export function Logo() {
+function Logo({ m }: { m: Messages }) {
   return (
     <Link href="/" aria-label={m.header.home} className="flex shrink-0 items-center gap-2">
       <span aria-hidden className="notch relative size-7 bg-accent shadow-[inset_0_0_0_2px_var(--edge)]">
@@ -24,7 +26,7 @@ export function Logo() {
   );
 }
 
-function SearchForm() {
+function SearchForm({ m }: { m: Messages }) {
   return (
     <form action="/search" role="search" className="flex min-w-0 flex-1">
       <label className="sr-only" htmlFor="header-scope">
@@ -56,8 +58,8 @@ function SearchForm() {
   );
 }
 
-/** "Mi cuenta" with a menu of the other account sections (orders have their own button). */
-function AccountMenu({ name, role }: { name: string; role: string | null }) {
+/** "My account" with a menu of the other account sections (orders have their own button). */
+function AccountMenu({ m, name, role }: { m: Messages; name: string; role: string | null }) {
   const t = m.header.account.menu;
   return (
     <Dropdown
@@ -98,11 +100,11 @@ function AccountMenu({ name, role }: { name: string; role: string | null }) {
   );
 }
 
-function AccountLinks({ name, units, role }: { name: string | null; units: number; role: string | null }) {
+function AccountLinks({ m, name, units, role }: { m: Messages; name: string | null; units: number; role: string | null }) {
   return (
     <nav className="flex items-center gap-1 text-sm">
       {name ? (
-        <AccountMenu name={name} role={role} />
+        <AccountMenu m={m} name={name} role={role} />
       ) : (
         <Link href="/login" className="btn btn-ghost flex-col items-start gap-0 leading-tight">
           <span className="text-xs text-ink-3">{m.header.account.signInHint}</span>
@@ -121,13 +123,14 @@ function AccountLinks({ name, units, role }: { name: string | null; units: numbe
   );
 }
 
-async function HeaderAccount() {
+async function HeaderAccount({ m }: { m: Messages }) {
   const [player, store] = await Promise.all([getCurrentPlayer(), cookies()]);
   const units = cartUnits(parseCart(store.get(CART_COOKIE)?.value));
-  return <AccountLinks name={player?.name ?? null} units={units} role={player?.role ?? null} />;
+  return <AccountLinks m={m} name={player?.name ?? null} units={units} role={player?.role ?? null} />;
 }
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const m = await getMessages();
   return (
     <header className="border-b-2 border-edge bg-surface">
       <div className="hidden bg-ink text-paper sm:block">
@@ -137,17 +140,18 @@ export function SiteHeader() {
             <span>{m.header.topbar[1]}</span>
             <span>{fmt(m.header.topbar[2], { command: m.commands.link })}</span>
           </p>
+          <LocaleSwitcher inverted />
           <ThemeSwitcher compact inverted />
         </div>
       </div>
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-        <Logo />
+        <Logo m={m} />
         <div className="order-last w-full md:order-none md:w-auto md:flex-1">
-          <SearchForm />
+          <SearchForm m={m} />
         </div>
         <div className="ml-auto md:ml-0">
-          <Suspense fallback={<AccountLinks name={null} units={0} role={null} />}>
-            <HeaderAccount />
+          <Suspense fallback={<AccountLinks m={m} name={null} units={0} role={null} />}>
+            <HeaderAccount m={m} />
           </Suspense>
         </div>
       </div>

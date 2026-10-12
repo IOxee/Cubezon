@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { fmt, m } from "@/i18n";
+import { fmt } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 import { inkStyle } from "@/lib/inks";
 
 function initials(name: string): string {
@@ -22,6 +25,7 @@ export function ShopSeal({
   size?: number;
   logoUrl?: string | null;
 }) {
+  const m = useMessages();
   const frame = "inline-flex shrink-0 border-2 border-shop outline-1 outline-offset-2 outline-shop";
   if (logoUrl) {
     return (
@@ -66,6 +70,7 @@ export function SoldBy({
   ink: string;
   official?: boolean;
 }) {
+  const m = useMessages();
   return (
     <span className="text-sm text-ink-2" style={inkStyle(ink)}>
       {m.product.soldBy}{" "}

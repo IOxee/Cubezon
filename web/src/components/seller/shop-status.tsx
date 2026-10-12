@@ -1,4 +1,6 @@
-import { m } from "@/i18n";
+"use client";
+
+import { useMessages } from "@/i18n/client";
 import type { ListingStatus, ShopStatus } from "@/lib/seller/stats";
 import { Stamp } from "@/components/ui/stamp";
 
@@ -11,6 +13,7 @@ const SHOP_TONE = {
 
 /** Shop status as a crooked stamp ("EN REVISIÓN", "APROBADA"…). */
 export function ShopStatusStamp({ status, size = "sm" }: { status: ShopStatus; size?: "sm" | "md" | "lg" }) {
+  const m = useMessages();
   return (
     <Stamp tone={SHOP_TONE[status]} size={size} rotate={status === "APPROVED" ? -5 : -3}>
       {m.status.shop[status]}
@@ -26,5 +29,6 @@ const LISTING_BADGE = {
 
 /** Listing status as a small badge (tables are dense: stamps are kept for orders). */
 export function ListingStatusBadge({ status }: { status: ListingStatus }) {
+  const m = useMessages();
   return <span className={LISTING_BADGE[status]}>{m.status.listing[status]}</span>;
 }

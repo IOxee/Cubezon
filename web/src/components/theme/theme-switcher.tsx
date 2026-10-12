@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useSyncExternalStore } from "react";
-import { m } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 import { PixelIcon } from "@/components/ui/pixel-icon";
 import {
   THEME_PREFERENCES,
@@ -24,6 +24,7 @@ const ICONS = { system: "monitor", light: "sun", dark: "moon" } as const;
 
 /** Segmented control system / light / dark. The choice lives in the cz-theme cookie. */
 export function ThemeSwitcher({ compact = false, inverted = false }: { compact?: boolean; inverted?: boolean }) {
+  const m = useMessages();
   // null on the server and while hydrating: only the browser knows the cookie.
   const current = useSyncExternalStore(subscribe, readThemePreference, () => null);
 

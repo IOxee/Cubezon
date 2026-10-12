@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { fmt, m } from "@/i18n";
+import { fmt } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 import type { CatalogItem } from "@/lib/data/catalog";
 import { serialOf } from "@/lib/format";
 import { inkStyle } from "@/lib/inks";
@@ -9,7 +10,8 @@ import { Rating } from "@/components/ui/rating";
 import { Stamp } from "@/components/ui/stamp";
 
 /** Catalog card drawn as a coupon: icon on ruled squares, perforation, then the data. */
-export function ProductCard({ item }: { item: CatalogItem }) {
+export async function ProductCard({ item }: { item: CatalogItem }) {
+  const m = await getMessages();
   const soldOut = item.unitsAvailable === 0;
   return (
     <article className="lift card relative flex flex-col" style={inkStyle(item.shop.ink)}>

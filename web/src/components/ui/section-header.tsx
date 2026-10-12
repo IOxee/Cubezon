@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { m } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 
 /** Block header: mono label, title and an optional "see all" link. */
-export function SectionHeader({
+export async function SectionHeader({
   label,
   title,
   href,
@@ -13,6 +13,7 @@ export function SectionHeader({
   href?: string;
   linkText?: string;
 }) {
+  const m = await getMessages();
   return (
     <div className="mb-4 flex items-end justify-between gap-4 border-b-2 border-edge pb-2">
       <div>

@@ -67,6 +67,9 @@ A parody marketplace for a Minecraft server. Approved player shops sell in-game 
 - Shop approval, lockers, players and shop slots, staff, read-only orders.
 - Seasonal themes with automatic WCAG contrast checks.
 
+**Languages**
+- English by default and Spanish, on the web (selector in the header and footer) and in game (`locale` in `config.yml`). Both are checked to have the same keys and placeholders.
+
 ## Tech stack
 
 | Part | Stack |
@@ -153,7 +156,7 @@ select uuid, 'SUPERADMIN' from public.players where name = '<YourPlayerName>';
 | `shop <slug\|id>`, `shop settings slots ...` | admins | Shop zone wand, shop slots |
 | `reload` | admins | Reload configuration and messages |
 
-Player-facing texts are in Spanish and live in `plugin/src/main/resources/lang/es.yml` and `web/src/i18n/`.
+Texts come in English (default) and Spanish: `plugin/src/main/resources/lang/{en,es}.yml` (set `locale` in `config.yml`) and `web/src/i18n/{en,es}/` (visitors switch with the EN/ES selector; the choice is kept in a cookie and URLs stay the same).
 
 ## Tests
 

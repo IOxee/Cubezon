@@ -1,4 +1,7 @@
-import { fmt, m } from "@/i18n";
+"use client";
+
+import { fmt } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 import type { FieldErrorCode, FormState } from "@/lib/seller/validation";
 import { Notice } from "@/components/ui/notice";
 
@@ -12,6 +15,7 @@ export function FieldError({
   code: FieldErrorCode | undefined;
   values?: Record<string, string | number>;
 }) {
+  const m = useMessages();
   return (
     <p id={id} className="mt-1 text-sm font-semibold text-danger empty:hidden">
       {code ? fmt(m.seller.errors[code], values) : null}
@@ -27,6 +31,7 @@ export function FormFeedback<F extends string>({
   state: FormState<F>;
   savedMessage?: string;
 }) {
+  const m = useMessages();
   if (state.formError) return <Notice tone="danger">{m.seller.errors[state.formError]}</Notice>;
   if (state.status === "error") return <Notice tone="danger">{m.seller.errors.fixFields}</Notice>;
   if (state.status === "saved" && savedMessage) return <Notice tone="success">{savedMessage}</Notice>;

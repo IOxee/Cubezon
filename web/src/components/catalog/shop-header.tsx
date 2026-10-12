@@ -1,7 +1,8 @@
-import { fmt, m } from "@/i18n";
-import { formatDate } from "@/lib/format";
+import { fmt } from "@/i18n";
+import { getFormat, getMessages } from "@/i18n/server";
 import { inkStyle } from "@/lib/inks";
 import type { ShopZone } from "@/lib/seller/storage";
+import { worldName } from "@/components/shopping/world-name";
 import { ShopSeal } from "@/components/ui/shop-mark";
 import { Stamp } from "@/components/ui/stamp";
 
@@ -22,12 +23,9 @@ export type ShopHeaderData = {
 
 export type ShopHeaderStat = { label: string; value: string };
 
-function worldName(world: string): string {
-  return m.worlds[world as keyof typeof m.worlds] ?? world;
-}
-
 /** Where the shop is in the game: world and the corners of its zone, in mono. */
-export function ShopLocation({ zone }: { zone: ShopZone }) {
+export async function ShopLocation({ zone }: { zone: ShopZone }) {
+  const m = await getMessages();
   const t = m.catalog.shop.location;
   const coords = (x: number, y: number, z: number) => fmt(t.coords, { x, y, z });
   return (
@@ -35,7 +33,7 @@ export function ShopLocation({ zone }: { zone: ShopZone }) {
       <span className="label mr-2">{t.title}</span>
       <span className="num break-words text-ink-2">
         {fmt(t.value, {
-          world: worldName(zone.world),
+          world: worldName(m, zone.world),
           from: coords(zone.minX, zone.minY, zone.minZ),
           to: coords(zone.maxX, zone.maxY, zone.maxZ),
         })}
@@ -49,7 +47,7 @@ export function ShopLocation({ zone }: { zone: ShopZone }) {
  * description, location and the shop's numbers. The seller panel reuses it as a preview, with
  * the name as a paragraph (headingAs="p") and without numbers.
  */
-export function ShopHeader({
+export async function ShopHeader({
   shop,
   stats = [],
   headingAs: Heading = "h1",
@@ -58,6 +56,7 @@ export function ShopHeader({
   stats?: ShopHeaderStat[];
   headingAs?: "h1" | "p";
 }) {
+  const [m, f] = await Promise.all([getMessages(), getFormat()]);
   const t = m.catalog.shop;
   return (
     <header className="card relative overflow-hidden" style={inkStyle(shop.ink)}>
@@ -96,7 +95,7 @@ export function ShopHeader({
           <p className="mt-1 text-sm text-ink-2">
             {fmt(t.owner, { name: shop.ownerName })}
             {shop.createdAt ? (
-              <span className="text-ink-3"> · {fmt(t.since, { date: formatDate(shop.createdAt) })}</span>
+              <span className="text-ink-3"> · {fmt(t.since, { date: f.date(shop.createdAt) })}</span>
             ) : null}
           </p>
           <p className={`mt-3 max-w-prose whitespace-pre-line ${shop.description ? "" : "text-ink-3"}`}>

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { m } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 import { CATEGORY_ICON, CATEGORY_KEYS } from "@/lib/categories";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { keySlug } from "@/lib/url-slug";
 
 /** Category mosaic: one coupon per category, linking to the filtered search. */
-export function CategoryGrid() {
+export async function CategoryGrid() {
+  const m = await getMessages();
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
       {CATEGORY_KEYS.map((key) => {

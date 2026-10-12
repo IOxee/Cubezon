@@ -1,5 +1,6 @@
-# Language of the messages (file in plugins/Cubezon/lang/<locale>.yml).
-locale: es
+# Language of the messages: en (English) or es (Spanish). File in plugins/Cubezon/lang/<locale>.yml;
+# every bundled language is copied there, so you can edit it or add your own (missing texts fall back to English).
+locale: en
 
 # Address of the Cubezon web (e.g. https://cubezon.example.com or http://localhost:3000). The company
 # computer offers clickable chat links to the shop's page and seller panel. Empty: no links.

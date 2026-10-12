@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { fmt, m } from "@/i18n";
+import { fmt } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 
 /** Previous / next links that keep the current filters (query params). */
-export function Pagination({
+export async function Pagination({
   page,
   pageCount,
   basePath,
@@ -14,6 +15,7 @@ export function Pagination({
   params: Record<string, string>;
 }) {
   if (pageCount <= 1) return null;
+  const m = await getMessages();
 
   const hrefFor = (target: number) => {
     const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== ""));

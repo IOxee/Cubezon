@@ -1,0 +1,223 @@
+/** English texts: public catalog (home, search, product page, shops and lockers). Same keys as ../es/catalog.ts. */
+export const catalog = {
+  errors: {
+    notFoundStamp: "Lost",
+    genericStamp: "Out of order",
+    reference: "Error reference: {digest}",
+  },
+
+  breadcrumbs: {
+    home: "Home",
+    catalog: "Catalog",
+    shops: "Shops",
+  },
+
+  home: {
+    hero: {
+      label: "Supply booklet · Series A",
+      title: "Everything you don't feel like mining, in a locker near you",
+      body: "The server's approved shops sell real items, deposited in the game. You pay with in-game money and pick it up whenever you like.",
+      cta: "Browse the catalog",
+      help: "How it works",
+      stamp: "In-game money only",
+      stepsLabel: "Three steps, zero queues at spawn",
+      steps: [
+        { title: "Link your account", body: "Type {command} in the game and use the code to sign in here." },
+        { title: "Choose and pay", body: "Fill your cart and pick a locker. The server charges the order to your in-game balance." },
+        { title: "Pick up at the locker", body: "Right-click the locker you chose or use {command} near it." },
+      ],
+      stepNumber: "Coupon {number}",
+    },
+    categories: { label: "Sections", title: "Shop by category" },
+    newest: { label: "Just in", title: "The latest arrivals in the storage", link: "See what's new" },
+    bestSelling: {
+      label: "Best sellers",
+      title: "What flies off the shelves",
+      link: "See best sellers",
+      empty: "Nobody has rung the till yet. The first order could be yours.",
+    },
+    shops: {
+      label: "Server shops",
+      title: "Who sells here",
+      link: "See all shops",
+      empty: "No approved shops yet. Plenty of room for yours.",
+      cta: "Open a shop",
+    },
+    lockers: {
+      label: "Lockers",
+      title: "Pick up wherever is on your way",
+      count: {
+        zero: "No active lockers yet",
+        one: "{count} active locker on the server",
+        other: "{count} active lockers on the server",
+      },
+      body: "You choose the locker at checkout. Once the order is ready, it waits there until you come for it.",
+      link: "See lockers and coordinates",
+      more: { one: "and {count} more", other: "and {count} more" },
+    },
+  },
+
+  search: {
+    title: "Catalog",
+    allTitle: "Full catalog",
+    queryTitle: "Results for \"{q}\"",
+    shopTitle: "Products from {shop}",
+    metaTitle: "Search",
+    results: {
+      zero: "No results",
+      one: "{count} result",
+      other: "{count} results",
+    },
+    resultsRange: "{from}–{to} of {total}",
+    filters: {
+      title: "Filters",
+      toggle: "Filter and sort",
+      query: "Search",
+      queryPlaceholder: "Name, item or shop",
+      category: "Category",
+      anyCategory: "All",
+      shop: "Shop",
+      anyShop: "All shops",
+      availability: "Availability",
+      inStock: "In stock only",
+      price: "Price per unit",
+      min: "Min",
+      max: "Max",
+      apply: "Apply filters",
+      clear: "Clear filters",
+      active: "Active filters",
+      remove: "Remove filter: {name}",
+      priceFrom: "From {price}",
+      priceTo: "Up to {price}",
+    },
+    sort: {
+      label: "Sort by",
+      apply: "Sort",
+      options: {
+        relevance: "Relevance",
+        price_asc: "Price: low to high",
+        price_desc: "Price: high to low",
+        newest: "Newest",
+        best_selling: "Best selling",
+        top_rated: "Top rated",
+      },
+    },
+    empty: {
+      title: "Nothing to dig up here",
+      body: "No product matches those filters. Try fewer words or remove a filter.",
+      cta: "See the full catalog",
+    },
+  },
+
+  pagination: {
+    previous: "Previous",
+    next: "Next",
+    page: "Page {page}",
+    current: "Page {page}, current",
+  },
+
+  product: {
+    gallery: "Product image",
+    priceLabel: "Price per unit",
+    itemLabel: "Item",
+    descriptionTitle: "Description",
+    noDescription: "The shop wrote no description. The item speaks for itself.",
+    seeReviews: "See reviews",
+    buyBoxLoading: "Getting the box ready…",
+    details: {
+      title: "Product details",
+      item: "Item",
+      material: "Material ID",
+      unit: "Unit",
+      category: "Category",
+      listing: "Product no.",
+      published: "Published",
+      sold: "Sold",
+      shop: "Shop",
+    },
+    moreFromShop: { label: "From the same shop", title: "More from {shop}", link: "See the shop" },
+  },
+
+  reviews: {
+    label: "Reviews",
+    title: "Buyer reviews",
+    shopTitle: "What people say about this shop",
+    average: "{rating} out of 5",
+    total: { zero: "No reviews", one: "{count} review", other: "{count} reviews" },
+    stars: { one: "{count} star", other: "{count} stars" },
+    starsShare: "{stars}: {percent} %",
+    verified: "Verified purchase",
+    about: "About {listing}",
+    noBody: "No comment. Just the rating.",
+    empty: "Nobody has reviewed yet. Only people who collected their order can leave a review, so there are no bought reviews here.",
+    showingLatest: "Showing the {count} most recent.",
+  },
+
+  shops: {
+    title: "Server shops",
+    lead: "Every shop goes through an admin's desk before it can sell. Pick the one you trust most.",
+    count: { zero: "No approved shops", one: "{count} approved shop", other: "{count} approved shops" },
+    owner: "by {name}",
+    listings: { one: "{count} product", other: "{count} products" },
+    sold: { one: "{count} sold", other: "{count} sold" },
+    official: "Official",
+    noDescription: "No description. A shop of few words.",
+    empty: {
+      title: "No shops open yet",
+      body: "The market is waiting for its first merchant. If your chests are full, you know what to do.",
+      cta: "Open my shop",
+    },
+  },
+
+  shop: {
+    since: "On Cubezon since {date}",
+    owner: "Run by {name}",
+    stats: {
+      listings: "Products",
+      sold: "Units sold",
+      rating: "Rating",
+    },
+    listingsTitle: "Storefront",
+    listingsLabel: "Products",
+    featuredLabel: "The shop recommends",
+    featuredTitle: "Featured",
+    location: {
+      title: "Where it is",
+      value: "{world} · from {from} to {to}",
+      coords: "{x}, {y}, {z}",
+    },
+    empty: {
+      title: "Empty storefront",
+      body: "This shop has no active products yet. Check back in a while.",
+    },
+  },
+
+  /** Alternative texts of the shop images (logo in the seal, banner on the storefront). */
+  media: {
+    logoAlt: "{name} logo",
+    bannerAlt: "{name} banner",
+    photoAlt: "Photo of {title}",
+  },
+
+  lockers: {
+    title: "Pickup lockers",
+    lead: "Orders are picked up in the game, at the locker you chose at checkout.",
+    count: { zero: "No active lockers", one: "{count} active locker", other: "{count} active lockers" },
+    world: "World",
+    coords: "Coordinates",
+    coordsValue: "X {x} · Y {y} · Z {z}",
+    howTitle: "How to pick up",
+    howSteps: [
+      "Wait until your order says \"At locker\" in My orders.",
+      "Go to the locker you chose at checkout.",
+      "Right-click the locker block or use {command} within 5 blocks, and choose the order from the menu.",
+      "Bring as many free inventory slots as the order has units.",
+    ],
+    ordersLink: "See my orders",
+    helpLink: "More help with pickup",
+    empty: {
+      title: "No active lockers",
+      body: "An admin has to place the first one in the game. Until then, orders have nowhere to wait for you.",
+    },
+  },
+} as const;

@@ -1,4 +1,4 @@
-import { m } from "@/i18n";
+import type { Messages } from "@/i18n";
 import { keyFromSlug } from "@/lib/url-slug";
 
 /** Catalog categories. The database computes them with public.material_category(material). */
@@ -35,7 +35,7 @@ export function isCategoryKey(value: unknown): value is CategoryKey {
   return typeof value === "string" && (CATEGORY_KEYS as readonly string[]).includes(value);
 }
 
-export function categoryName(key: CategoryKey): string {
+export function categoryName(m: Messages, key: CategoryKey): string {
   return m.categories[key].name;
 }
 

@@ -1,5 +1,6 @@
 import type { DeliveryMethod } from "@/lib/delivery";
 import { DEFAULT_ORDERS_MODE, isCancelled, orderStampLabel, type OrderStatus, type OrdersMode } from "@/lib/order-display";
+import { getMessages } from "@/i18n/server";
 import { Stamp } from "./stamp";
 
 export type { OrderStatus } from "@/lib/order-display";
@@ -19,7 +20,7 @@ const TONE = {
  * mode of the plugin: in "roleplay" PENDING and PAID read "POR ACEPTAR" and "EN PREPARACIÓN".
  * `failureReason` turns a FAILED order the shop rejected (or that expired) into "CANCELADO".
  */
-export function OrderStatusStamp({
+export async function OrderStatusStamp({
   status,
   processing = false,
   size = "sm",
@@ -35,11 +36,12 @@ export function OrderStatusStamp({
   /** Express orders read "EN TU BUZÓN" instead of "EN TAQUILLA". */
   delivery?: DeliveryMethod;
 }) {
+  const m = await getMessages();
   const tone =
     status === "PENDING" && processing ? "ink" : isCancelled({ status, failureReason }) ? "muted" : TONE[status];
   return (
     <Stamp tone={tone} size={size} rotate={status === "COLLECTED" ? -6 : -3}>
-      {orderStampLabel(status, { processing, mode, failureReason, delivery })}
+      {orderStampLabel(m, status, { processing, mode, failureReason, delivery })}
     </Stamp>
   );
 }

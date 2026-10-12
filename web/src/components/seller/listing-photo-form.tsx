@@ -1,11 +1,10 @@
 "use client";
 
 import { useActionState, useEffect, useState, type ChangeEvent } from "react";
-import { fmt, m } from "@/i18n";
+import { fmt } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 import { checkImageFile, IDLE_IMAGE_STATE, SHOP_IMAGE_ACCEPT, type ShopImageError, type ShopImageState } from "@/lib/shop-media";
 import { ItemIcon } from "@/components/ui/item-icon";
-
-const t = m.seller.images;
 
 /**
  * Upload, replace or remove a product's photo. Same flow as ShopImageForm: the file is checked
@@ -24,6 +23,8 @@ export function ListingPhotoForm({
   title: string;
   material: string;
 }) {
+  const m = useMessages();
+  const t = m.seller.images;
   const [state, formAction, pending] = useActionState(action, IDLE_IMAGE_STATE);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileError, setFileError] = useState<ShopImageError | null>(null);

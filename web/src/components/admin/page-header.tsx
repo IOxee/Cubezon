@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { m } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 
 /** Title block of an admin page: mono label, h1, short intro and optional actions. */
-export function AdminPageHeader({
+export async function AdminPageHeader({
   title,
   intro,
   children,
@@ -11,6 +11,7 @@ export function AdminPageHeader({
   intro?: ReactNode;
   children?: ReactNode;
 }) {
+  const m = await getMessages();
   return (
     <header className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b-2 border-edge pb-3">
       <div className="min-w-0">

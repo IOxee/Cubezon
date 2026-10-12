@@ -1,18 +1,19 @@
 import Link from "next/link";
-import { fmt, m, plural } from "@/i18n";
+import { fmt, plural, type Messages } from "@/i18n";
+import { getFormat, getMessages } from "@/i18n/server";
 import type { ReviewPage } from "@/lib/data/reviews";
-import { formatDate, formatRating } from "@/lib/format";
+import type { Format } from "@/lib/format";
 import { Rating } from "@/components/ui/rating";
 import { SectionHeader } from "@/components/ui/section-header";
 import { RichText } from "./rich-text";
 
 /** Average, count and one bar per star (5 to 1). */
-function ReviewSummaryPanel({ summary }: { summary: ReviewPage["summary"] }) {
+function ReviewSummaryPanel({ m, f, summary }: { m: Messages; f: Format; summary: ReviewPage["summary"] }) {
   const t = m.catalog.reviews;
   return (
     <div className="card-soft flex flex-col gap-3 p-4">
       <div className="flex items-baseline gap-2">
-        <span className="num text-3xl font-semibold">{summary.average === null ? m.common.none : formatRating(summary.average)}</span>
+        <span className="num text-3xl font-semibold">{summary.average === null ? m.common.none : f.rating(summary.average)}</span>
         <span className="text-sm text-ink-3">/ 5</span>
       </div>
       <Rating value={summary.average} count={summary.count} />
@@ -48,7 +49,7 @@ function ReviewSummaryPanel({ summary }: { summary: ReviewPage["summary"] }) {
  * Reviews block of a listing or a shop: summary on the left, latest reviews on the right.
  * With showListing, each review links to the listing it is about (shop page).
  */
-export function ReviewList({
+export async function ReviewList({
   page,
   title,
   showListing = false,
@@ -59,6 +60,7 @@ export function ReviewList({
   showListing?: boolean;
   id?: string;
 }) {
+  const [m, f] = await Promise.all([getMessages(), getFormat()]);
   const t = m.catalog.reviews;
   const { reviews, summary } = page;
   return (
@@ -68,7 +70,7 @@ export function ReviewList({
         <p className="card-soft px-4 py-6 text-sm text-ink-2">{t.empty}</p>
       ) : (
         <div className="grid gap-6 md:grid-cols-[16rem_minmax(0,1fr)]">
-          <ReviewSummaryPanel summary={summary} />
+          <ReviewSummaryPanel m={m} f={f} summary={summary} />
           <div>
             <ol className="flex flex-col gap-3">
               {reviews.map((review) => (
@@ -79,7 +81,7 @@ export function ReviewList({
                       <Rating value={review.rating} count={1} showCount={false} />
                       <span className="badge badge-paper">{t.verified}</span>
                       <time dateTime={review.createdAt} className="ml-auto text-xs text-ink-3">
-                        {formatDate(review.createdAt)}
+                        {f.date(review.createdAt)}
                       </time>
                     </header>
                     {showListing ? (

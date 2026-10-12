@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { formatInteger } from "@/lib/format";
+import { getFormat } from "@/i18n/server";
 
 export type StatusTab = { href: string; label: string; count?: number; active: boolean };
 
 /** Folder tabs that filter a list (links, so the filter lives in the URL). */
-export function StatusTabs({ label, tabs }: { label: string; tabs: StatusTab[] }) {
+export async function StatusTabs({ label, tabs }: { label: string; tabs: StatusTab[] }) {
+  const f = await getFormat();
   return (
     <nav aria-label={label} className="mb-4 border-b-2 border-edge">
       <ul className="scroll-row -mb-0.5 flex gap-1 overflow-x-auto">
@@ -21,7 +22,7 @@ export function StatusTabs({ label, tabs }: { label: string; tabs: StatusTab[] }
             >
               {tab.label}
               {tab.count !== undefined ? (
-                <span className={`badge num ${tab.active ? "badge-ink" : "badge-paper"}`}>{formatInteger(tab.count)}</span>
+                <span className={`badge num ${tab.active ? "badge-ink" : "badge-paper"}`}>{f.integer(tab.count)}</span>
               ) : null}
             </Link>
           </li>

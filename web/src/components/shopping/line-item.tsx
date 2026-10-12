@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { fmt, m, plural } from "@/i18n";
+import { fmt, plural } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 import { inkStyle } from "@/lib/inks";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { SoldBy } from "@/components/ui/shop-mark";
@@ -14,7 +15,7 @@ export type LineListing = {
 };
 
 /** Icon on ruled squares, title, "sold by" and items per unit; extra content goes below. */
-export function LineItemInfo({
+export async function LineItemInfo({
   listing,
   href = `/p/${listing.id}`,
   iconSize = 48,
@@ -25,6 +26,7 @@ export function LineItemInfo({
   iconSize?: number;
   children?: ReactNode;
 }) {
+  const m = await getMessages();
   return (
     <div className="flex min-w-0 gap-3" style={inkStyle(listing.shop.ink)}>
       <span className="squares relative flex shrink-0 items-center justify-center border border-line p-2">

@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { m } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 
 const CloseContext = createContext<(() => void) | null>(null);
 
@@ -35,6 +35,7 @@ export function Modal({
   triggerClassName?: string;
   children: ReactNode;
 }) {
+  const m = useMessages();
   const ref = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   const titleId = useId();

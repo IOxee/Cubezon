@@ -1,5 +1,6 @@
-import { m } from "@/i18n";
-import { formatAmount } from "@/lib/format";
+"use client";
+
+import { useFormat, useMessages } from "@/i18n/client";
 
 const SIZES = { sm: "text-sm", md: "text-md", lg: "text-xl", xl: "text-2xl" } as const;
 
@@ -13,9 +14,11 @@ export function Price({
   size?: keyof typeof SIZES;
   className?: string;
 }) {
+  const m = useMessages();
+  const f = useFormat();
   return (
     <span className={`num font-semibold whitespace-nowrap ${SIZES[size]} ${className}`}>
-      {formatAmount(amount)}
+      {f.amount(amount)}
       <span className="text-[0.75em] text-ink-2">{m.money.suffix}</span>
     </span>
   );

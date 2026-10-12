@@ -1,4 +1,4 @@
-import { fmt, m } from "@/i18n";
+import { fmt, type Messages } from "@/i18n";
 import type { DeliveryMethod } from "@/lib/delivery";
 
 /**
@@ -43,45 +43,48 @@ type StatusOptions = { processing?: boolean; mode?: OrdersMode; failureReason?: 
 type MailboxTexts = { order: Partial<Record<OrderStatus, string>>; stamp: Partial<Record<OrderStatus, string>>; help: Partial<Record<OrderStatus, string>>; steps: Partial<Record<OrderStatus, string>> };
 
 /** Texts of express orders (they reach the buyer's mailbox), or null for locker orders. */
-function mailboxTexts(delivery: DeliveryMethod | undefined): MailboxTexts | null {
+function mailboxTexts(m: Messages, delivery: DeliveryMethod | undefined): MailboxTexts | null {
   return delivery === "MAILBOX" ? m.status.mailbox : null;
 }
 
 /** Statuses whose texts change in roleplay mode (waiting for the shop / being prepared). */
-type RoleplayStatus = keyof typeof m.roleplay.status.order;
+type RoleplayStatus = keyof Messages["roleplay"]["status"]["order"];
 
-function roleplayStatus(status: OrderStatus, mode: OrdersMode): RoleplayStatus | null {
+function roleplayStatus(m: Messages, status: OrderStatus, mode: OrdersMode): RoleplayStatus | null {
   return mode === "roleplay" && status in m.roleplay.status.order ? (status as RoleplayStatus) : null;
 }
 
 /** Name of the status: "Pendiente de cobro", or "Esperando a la tienda" in roleplay mode. */
 export function orderStatusLabel(
+  m: Messages,
   status: OrderStatus,
   { processing = false, mode = DEFAULT_ORDERS_MODE, failureReason, delivery }: StatusOptions = {},
 ): string {
   if (status === "PENDING" && processing) return m.status.processing;
   if (isCancelled({ status, failureReason })) return m.status.cancelled.order;
-  const mailbox = mailboxTexts(delivery)?.order[status];
+  const mailbox = mailboxTexts(m, delivery)?.order[status];
   if (mailbox) return mailbox;
-  const roleplay = roleplayStatus(status, mode);
+  const roleplay = roleplayStatus(m, status, mode);
   return roleplay ? m.roleplay.status.order[roleplay] : m.status.order[status];
 }
 
 /** Text of the status stamp ("Pendiente", "Por aceptar", "En taquilla", "Cancelado"…). */
 export function orderStampLabel(
+  m: Messages,
   status: OrderStatus,
   { processing = false, mode = DEFAULT_ORDERS_MODE, failureReason, delivery }: StatusOptions = {},
 ): string {
   if (status === "PENDING" && processing) return m.status.processingStamp;
   if (isCancelled({ status, failureReason })) return m.status.cancelled.stamp;
-  const mailbox = mailboxTexts(delivery)?.stamp[status];
+  const mailbox = mailboxTexts(m, delivery)?.stamp[status];
   if (mailbox) return mailbox;
-  const roleplay = roleplayStatus(status, mode);
+  const roleplay = roleplayStatus(m, status, mode);
   return roleplay ? m.roleplay.status.stamp[roleplay] : m.status.orderStamp[status];
 }
 
 /** What the status means for the buyer. May contain a {command} placeholder (READY). */
 export function orderStatusHelp(
+  m: Messages,
   status: OrderStatus,
   { processing = false, mode = DEFAULT_ORDERS_MODE, failureReason, delivery }: StatusOptions = {},
 ): string {
@@ -89,32 +92,32 @@ export function orderStatusHelp(
     return mode === "roleplay" ? m.roleplay.status.processingHelp : m.status.processingHelp;
   }
   if (isCancelled({ status, failureReason })) return m.status.cancelled.help;
-  const mailbox = mailboxTexts(delivery)?.help[status];
+  const mailbox = mailboxTexts(m, delivery)?.help[status];
   if (mailbox) return mailbox;
-  const roleplay = roleplayStatus(status, mode);
+  const roleplay = roleplayStatus(m, status, mode);
   return roleplay ? m.roleplay.status.help[roleplay] : m.status.orderHelp[status];
 }
 
 /** Name of a step in the tracking of the order page ("Cobrado" / "Aceptado y cobrado"…). */
 export function orderStepLabel(
+  m: Messages,
   status: OrderStatus,
   mode: OrdersMode = DEFAULT_ORDERS_MODE,
   failureReason?: string | null,
   delivery?: DeliveryMethod,
 ): string {
   if (isCancelled({ status, failureReason })) return m.status.cancelled.order;
-  const mailbox = mailboxTexts(delivery)?.steps[status];
+  const mailbox = mailboxTexts(m, delivery)?.steps[status];
   if (mailbox) return mailbox;
   const steps: Partial<Record<OrderStatus, string>> = m.roleplay.status.steps;
   return (mode === "roleplay" ? steps[status] : undefined) ?? m.account.order.steps[status];
 }
 
-const REASONS: Record<string, string> = { ...m.status.failureReason, ...m.roleplay.failureReason };
-
 /** Text for orders.failure_reason (a code set by the plugin); unknown codes are shown as they are. */
-export function failureReasonText(code: string | null | undefined): string | null {
+export function failureReasonText(m: Messages, code: string | null | undefined): string | null {
   if (!code) return null;
-  return REASONS[code] ?? fmt(m.status.failureReasonUnknown, { code });
+  const reasons: Record<string, string> = { ...m.status.failureReason, ...m.roleplay.failureReason };
+  return reasons[code] ?? fmt(m.status.failureReasonUnknown, { code });
 }
 
 /**

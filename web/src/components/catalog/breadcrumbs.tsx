@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { m } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 
 export type Crumb = { label: string; href?: string };
 
 /** "Catálogo › Herramientas › Pico de diamante": the last crumb is the current page. */
-export function Breadcrumbs({ items }: { items: Crumb[] }) {
+export async function Breadcrumbs({ items }: { items: Crumb[] }) {
+  const m = await getMessages();
   return (
     <nav aria-label={m.a11y.breadcrumbs} className="mb-4">
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-ink-2">

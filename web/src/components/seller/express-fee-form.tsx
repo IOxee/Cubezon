@@ -1,12 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { fmt, m } from "@/i18n";
+import { fmt } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 import { idleState, type ExpressFeeField, type FormState } from "@/lib/seller/validation";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FieldError, FormFeedback } from "./form-feedback";
-
-const t = m.seller.expressFee;
 
 /**
  * The shop's own express fee: a decimal field (empty = the server's fee) and save. `initial` is
@@ -25,6 +24,7 @@ export function ExpressFeeForm({
   /** Highest fee allowed, for the range error. */
   maxLabel: string;
 }) {
+  const t = useMessages().seller.expressFee;
   const [state, formAction] = useActionState(action, idleState<ExpressFeeField>());
   const error = state.fieldErrors.expressFee;
   return (

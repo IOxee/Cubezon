@@ -1,3 +1,4 @@
+import type { Locale } from "@/i18n/locales";
 import { isInkKey, type InkKey } from "@/lib/inks";
 import { isVanillaItemKey, VANILLA_NAMESPACE, vanillaItemKey } from "@/lib/items/keys";
 import { maxStackSize } from "./stack";
@@ -135,18 +136,34 @@ export function isValidSlug(slug: string): boolean {
 // Price
 
 /**
- * Parses a price typed by a Spanish seller into integer cents. Accepts "12", "12,5", "12.50",
- * "1.250" (thousands), "1.250,50" and spaces as thousands separators; at most 2 decimals.
+ * Thousands and decimal separators of a typed price, by language. A group always has 3 digits
+ * and a price at most 2 decimals, so "1.250" (es) and "1,250" (en) are 1250, while the other
+ * language's grouping ("1,250" in es, "1.250" in en) is rejected instead of being read as a
+ * price 1000 times smaller or bigger.
  */
-export function parsePriceCents(raw: unknown): { cents: number } | { error: "priceFormat" | "priceRange" } {
+const PRICE_SEPARATORS: Record<Locale, { group: string; decimal: string; grouped: RegExp }> = {
+  en: { group: ",", decimal: ".", grouped: /^[1-9]\d{0,2}(,\d{3})+(\.\d{1,2})?$/ },
+  es: { group: ".", decimal: ",", grouped: /^[1-9]\d{0,2}(\.\d{3})+(,\d{1,2})?$/ },
+};
+
+/**
+ * Parses a price typed by a seller into integer cents. Accepts "12", "12.5", "12,50" (either
+ * decimal mark, 1 or 2 decimals), thousands grouped in the seller's language ("1,250.50" en,
+ * "1.250,50" es) and spaces as thousands separators; at most 2 decimals.
+ */
+export function parsePriceCents(
+  raw: unknown,
+  locale: Locale,
+): { cents: number } | { error: "priceFormat" | "priceRange" } {
   if (typeof raw !== "string" && typeof raw !== "number") return { error: "priceFormat" };
   const text = String(raw)
     .replace(/[\s  ]/g, "")
     .replace(/\$$/, "");
 
+  const { group, decimal: mark, grouped } = PRICE_SEPARATORS[locale];
   let decimal: string | null = null;
-  if (/^[1-9]\d{0,2}(\.\d{3})+(,\d{1,2})?$/.test(text)) {
-    decimal = text.replace(/\./g, "").replace(",", ".");
+  if (grouped.test(text)) {
+    decimal = text.split(group).join("").replace(mark, ".");
   } else if (/^\d+([.,]\d{1,2})?$/.test(text)) {
     decimal = text.replace(",", ".");
   }
@@ -159,10 +176,10 @@ export function parsePriceCents(raw: unknown): { cents: number } | { error: "pri
   return { cents };
 }
 
-/** Price for an input field, with a decimal comma and no grouping: 1250.5 -> "1250,50". */
-export function priceInputValue(amount: number): string {
+/** Price for an input field, with the language's decimal mark and no grouping: 1250.5 -> "1250.50" / "1250,50". */
+export function priceInputValue(amount: number, locale: Locale): string {
   const cents = Math.round(amount * 100);
-  return `${Math.floor(cents / 100)},${String(cents % 100).padStart(2, "0")}`;
+  return `${Math.floor(cents / 100)}${PRICE_SEPARATORS[locale].decimal}${String(cents % 100).padStart(2, "0")}`;
 }
 
 // Material and unit amount
@@ -336,7 +353,8 @@ export function validateListing(
   {
     formatLocked = false,
     customItems = [],
-  }: { formatLocked?: boolean; customItems?: readonly CustomItemOption[] } = {},
+    locale,
+  }: { formatLocked?: boolean; customItems?: readonly CustomItemOption[]; locale: Locale },
 ): Result<ListingInput, ListingField> {
   const errors: FieldErrors<ListingField> = {};
 
@@ -358,7 +376,7 @@ export function validateListing(
     }
   }
 
-  const price = parsePriceCents(raw.unitPrice);
+  const price = parsePriceCents(raw.unitPrice, locale);
   if ("error" in price) errors.unitPrice = price.error;
 
   if (!isEditableListingStatus(raw.status)) errors.status = "statusInvalid";

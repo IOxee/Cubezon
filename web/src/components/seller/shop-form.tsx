@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { fmt, m } from "@/i18n";
+import { fmt } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 import { INK_KEYS, inkStyle } from "@/lib/inks";
 import {
   charLength,
@@ -20,8 +21,6 @@ import { FieldError, FormFeedback } from "./form-feedback";
 
 export type ShopFormValues = { name: string; slug: string; description: string; ink: string };
 
-const t = m.seller.shopForm;
-
 /**
  * Shop request / shop details form. Controlled fields, so they survive the action's form reset;
  * the slug follows the name until the seller edits it (autoSlug). With resetOnSave (a new shop
@@ -31,7 +30,7 @@ const t = m.seller.shopForm;
 export function ShopForm({
   action,
   initial,
-  slugHint = t.slugHint,
+  slugHint,
   logoUrl = null,
   autoSlug = false,
   resetOnSave = false,
@@ -54,6 +53,8 @@ export function ShopForm({
   pendingLabel: string;
   savedMessage?: string;
 }) {
+  const m = useMessages();
+  const t = m.seller.shopForm;
   const [state, formAction] = useActionState(action, idleState<ShopField>());
   const [name, setName] = useState(initial.name);
   const [slug, setSlug] = useState(initial.slug);
@@ -136,7 +137,7 @@ export function ShopForm({
           />
         </div>
         <p id={id("slug-hint")} className="mt-1 text-xs text-ink-3">
-          {slugHint}
+          {slugHint ?? t.slugHint}
         </p>
         <FieldError id={id("slug-error")} code={errors.slug} />
       </div>

@@ -61,27 +61,48 @@ describe("parsePriceCents", () => {
     ["12,50 $", 1250],
     ["1000000000", 100_000_000_000],
   ])("parses %s", (input, cents) => {
-    expect(parsePriceCents(input)).toEqual({ cents });
+    expect(parsePriceCents(input, "es")).toEqual({ cents });
   });
 
   it.each(["", "abc", "12,345", "1,250.50", "-5", "12,", "0.500"])("rejects the format of %s", (input) => {
-    expect(parsePriceCents(input)).toEqual({ error: "priceFormat" });
+    expect(parsePriceCents(input, "es")).toEqual({ error: "priceFormat" });
   });
 
   it.each(["0", "0,00", "1000000000,01", "99999999999999"])("rejects the range of %s", (input) => {
-    expect(parsePriceCents(input)).toEqual({ error: "priceRange" });
+    expect(parsePriceCents(input, "es")).toEqual({ error: "priceRange" });
   });
 
   it("rejects anything that is not text or a number", () => {
-    expect(parsePriceCents(null)).toEqual({ error: "priceFormat" });
+    expect(parsePriceCents(null, "es")).toEqual({ error: "priceFormat" });
   });
+
+  it.each([
+    ["12", 1200],
+    ["12.5", 1250],
+    ["12,50", 1250],
+    ["1,250", 125000],
+    ["1,250.50", 125050],
+    ["1,000,000", 100_000_000],
+    ["1 250.5", 125050],
+  ])("parses %s in English", (input, cents) => {
+    expect(parsePriceCents(input, "en")).toEqual({ cents });
+  });
+
+  it.each(["1.250", "1.250,50", "1,250,50", "12.345", "0.500"])(
+    "rejects %s in English instead of guessing a price 1000 times off",
+    (input) => {
+      expect(parsePriceCents(input, "en")).toEqual({ error: "priceFormat" });
+    },
+  );
 });
 
 describe("priceInputValue", () => {
-  it("uses a decimal comma and two decimals", () => {
-    expect(priceInputValue(1250.5)).toBe("1250,50");
-    expect(priceInputValue(0.29)).toBe("0,29");
-    expect(parsePriceCents(priceInputValue(19.99))).toEqual({ cents: 1999 });
+  it("uses the language's decimal mark and two decimals", () => {
+    expect(priceInputValue(1250.5, "es")).toBe("1250,50");
+    expect(priceInputValue(0.29, "es")).toBe("0,29");
+    expect(priceInputValue(1250.5, "en")).toBe("1250.50");
+    expect(parsePriceCents(priceInputValue(19.99, "es"), "es")).toEqual({ cents: 1999 });
+    expect(parsePriceCents(priceInputValue(19.99, "en"), "en")).toEqual({ cents: 1999 });
   });
 });
 
@@ -151,7 +172,7 @@ describe("validateListing", () => {
   };
 
   it("returns the parsed listing", () => {
-    expect(validateListing(valid)).toEqual({
+    expect(validateListing(valid, { locale: "es" })).toEqual({
       ok: true,
       value: {
         title: "Pico de diamante",
@@ -164,29 +185,29 @@ describe("validateListing", () => {
   });
 
   it("keeps a unit inside one stack of the material", () => {
-    expect(validateListing({ ...valid, unitAmount: "2" })).toEqual({ ok: false, errors: { unitAmount: "unitAmountStack" } });
-    expect(validateListing({ ...valid, item: "ender_pearl", unitAmount: "17" })).toEqual({
+    expect(validateListing({ ...valid, unitAmount: "2" }, { locale: "es" })).toEqual({ ok: false, errors: { unitAmount: "unitAmountStack" } });
+    expect(validateListing({ ...valid, item: "ender_pearl", unitAmount: "17" }, { locale: "es" })).toEqual({
       ok: false,
       errors: { unitAmount: "unitAmountStack" },
     });
-    expect(validateListing({ ...valid, item: "ender_pearl", unitAmount: "16" }).ok).toBe(true);
-    expect(validateListing({ ...valid, item: "diamond", unitAmount: "64" }).ok).toBe(true);
+    expect(validateListing({ ...valid, item: "ender_pearl", unitAmount: "16" }, { locale: "es" }).ok).toBe(true);
+    expect(validateListing({ ...valid, item: "diamond", unitAmount: "64" }, { locale: "es" }).ok).toBe(true);
     expect(maxUnitAmount("diamond_sword")).toBe(1);
     expect(maxUnitAmount("oak_sign")).toBe(16);
     expect(maxUnitAmount("stone")).toBe(64);
   });
 
   it("does not read the format again once it is locked", () => {
-    const result = validateListing({ ...valid, unitAmount: "80" }, { formatLocked: true });
+    const result = validateListing({ ...valid, unitAmount: "80" }, { formatLocked: true, locale: "es" });
     expect(result.ok && result.value.format).toBeNull();
   });
 
   it("accepts the key of a registered custom item, with its own stack size", () => {
     const customItems = [{ key: "nexo:ruby", name: "Rubí", material: "emerald", maxStack: 16, iconPath: null }];
-    const result = validateListing({ ...valid, item: "nexo:ruby", unitAmount: "16" }, { customItems });
+    const result = validateListing({ ...valid, item: "nexo:ruby", unitAmount: "16" }, { customItems, locale: "es" });
     expect(result.ok && result.value.format).toEqual({ itemKey: "nexo:ruby", material: "emerald", unitAmount: 16 });
-    expect(validateListing({ ...valid, item: "nexo:ruby", unitAmount: "17" }, { customItems }).ok).toBe(false);
-    expect(validateListing({ ...valid, item: "nexo:zafiro" }, { customItems })).toEqual({
+    expect(validateListing({ ...valid, item: "nexo:ruby", unitAmount: "17" }, { customItems, locale: "es" }).ok).toBe(false);
+    expect(validateListing({ ...valid, item: "nexo:zafiro" }, { customItems, locale: "es" })).toEqual({
       ok: false,
       errors: { item: "itemUnknown" },
     });
@@ -200,7 +221,7 @@ describe("validateListing", () => {
       unitAmount: "99",
       unitPrice: "12,345",
       status: "REMOVED",
-    });
+    }, { locale: "es" });
     expect(result).toEqual({
       ok: false,
       errors: {

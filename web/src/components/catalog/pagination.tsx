@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { fmt, m } from "@/i18n";
+import { fmt } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 
 /** Pages to show: first, last and the current one with its neighbours; null = gap. */
 function pageWindow(page: number, totalPages: number): (number | null)[] {
@@ -15,7 +16,7 @@ function pageWindow(page: number, totalPages: number): (number | null)[] {
 }
 
 /** Numbered pagination with links (works without JavaScript). */
-export function Pagination({
+export async function Pagination({
   page,
   totalPages,
   href,
@@ -25,6 +26,7 @@ export function Pagination({
   href: (page: number) => string;
 }) {
   if (totalPages <= 1) return null;
+  const m = await getMessages();
   return (
     <nav aria-label={m.a11y.pagination} className="mt-8 flex flex-wrap items-center justify-center gap-1.5">
       {page > 1 ? (

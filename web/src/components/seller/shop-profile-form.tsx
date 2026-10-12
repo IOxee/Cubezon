@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { fmt, m } from "@/i18n";
-import { formatInteger } from "@/lib/format";
+import { fmt } from "@/i18n";
+import { useFormat, useMessages } from "@/i18n/client";
 import { MAX_FEATURED_LISTINGS, SHOP_TAGLINE_MAX, type ProfileField } from "@/lib/seller/profile";
 import { charLength, idleState, type FormState } from "@/lib/seller/validation";
 import { ItemIcon } from "@/components/ui/item-icon";
@@ -13,8 +13,6 @@ import { FieldError, FormFeedback } from "./form-feedback";
 export type FeaturedOption = { id: string; title: string; material: string; available: number };
 
 export type ShopProfileValues = { tagline: string; featuredListingIds: string[]; showLocation: boolean };
-
-const t = m.seller.profile;
 
 /**
  * Public profile of a shop: tagline, up to four featured listings (checkboxes; once four are
@@ -32,6 +30,9 @@ export function ShopProfileForm({
   options: FeaturedOption[];
   hasZone: boolean;
 }) {
+  const m = useMessages();
+  const f = useFormat();
+  const t = m.seller.profile;
   const [state, formAction] = useActionState(action, idleState<ProfileField>());
   const [tagline, setTagline] = useState(initial.tagline);
   const [featured, setFeatured] = useState(() =>
@@ -108,7 +109,7 @@ export function ShopProfileForm({
                     <span className="min-w-0">
                       <span className={`block truncate ${checked ? "font-semibold" : ""}`}>{option.title}</span>
                       <span className="num block text-xs text-ink-3">
-                        {fmt(t.featuredStock, { count: formatInteger(option.available) })}
+                        {fmt(t.featuredStock, { count: f.integer(option.available) })}
                       </span>
                     </span>
                   </label>

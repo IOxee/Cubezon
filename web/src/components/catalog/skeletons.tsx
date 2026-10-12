@@ -1,6 +1,7 @@
-import { m } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 
-export function ProductGridSkeleton({ count = 10, sidebar = false }: { count?: number; sidebar?: boolean }) {
+export async function ProductGridSkeleton({ count = 10, sidebar = false }: { count?: number; sidebar?: boolean }) {
+  const m = await getMessages();
   const columns = sidebar ? "sm:grid-cols-3 xl:grid-cols-4" : "sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
   return (
     <div role="status" aria-label={m.a11y.loading} className={`grid grid-cols-2 gap-3 ${columns}`}>

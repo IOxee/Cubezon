@@ -60,6 +60,9 @@ Un marketplace parodia para un servidor de Minecraft. Las tiendas de jugadores a
 - Aprobación de tiendas, taquillas, jugadores y cupos de tiendas, equipo y pedidos en solo lectura.
 - Temas de temporada con comprobación automática de contraste WCAG.
 
+**Idiomas**
+- Inglés por defecto y español, en la web (selector en la cabecera y el pie) y en el juego (`locale` en `config.yml`). Se comprueba que ambos tengan las mismas claves y marcadores.
+
 ## Tecnologías
 
 | Parte | Stack |
@@ -146,7 +149,7 @@ select uuid, 'SUPERADMIN' from public.players where name = '<TuNombreDeJugador>'
 | `shop <slug\|id>`, `shop settings slots ...` | admins | Palo de zona de tienda, cupos de tiendas |
 | `reload` | admins | Recargar la configuración y los mensajes |
 
-Los textos para el jugador están en español, en `plugin/src/main/resources/lang/es.yml` y `web/src/i18n/`.
+Los textos están en inglés (por defecto) y en español: `plugin/src/main/resources/lang/{en,es}.yml` (se elige con `locale` en `config.yml`) y `web/src/i18n/{en,es}/` (el visitante cambia con el selector EN/ES; la elección se guarda en una cookie y las URLs no cambian).
 
 ## Tests
 

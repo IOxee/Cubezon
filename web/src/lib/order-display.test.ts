@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { m } from "@/i18n";
+import { messagesFor } from "@/i18n/messages";
 import {
   failureReasonText,
   isCancelled,
@@ -11,6 +11,9 @@ import {
   parseOrdersMode,
   sellerPayout,
 } from "./order-display";
+
+// Spanish texts: some assertions check literal Spanish wording.
+const m = messagesFor("es");
 
 describe("isProcessing", () => {
   it("is true only for a PENDING order the plugin has claimed", () => {
@@ -33,54 +36,54 @@ describe("parseOrdersMode", () => {
 
 describe("order texts by mode", () => {
   it("keeps the usual texts by default and in automatic mode", () => {
-    expect(orderStatusLabel("PENDING")).toBe(m.status.order.PENDING);
-    expect(orderStatusLabel("PAID", { mode: "automatic" })).toBe(m.status.order.PAID);
-    expect(orderStampLabel("PENDING")).toBe(m.status.orderStamp.PENDING);
-    expect(orderStatusHelp("PAID")).toBe(m.status.orderHelp.PAID);
-    expect(orderStepLabel("PAID")).toBe(m.account.order.steps.PAID);
+    expect(orderStatusLabel(m, "PENDING")).toBe(m.status.order.PENDING);
+    expect(orderStatusLabel(m, "PAID", { mode: "automatic" })).toBe(m.status.order.PAID);
+    expect(orderStampLabel(m, "PENDING")).toBe(m.status.orderStamp.PENDING);
+    expect(orderStatusHelp(m, "PAID")).toBe(m.status.orderHelp.PAID);
+    expect(orderStepLabel(m, "PAID")).toBe(m.account.order.steps.PAID);
   });
 
   it("waits for the shop and prepares the order in roleplay mode", () => {
-    expect(orderStatusLabel("PENDING", { mode: "roleplay" })).toBe("Esperando a la tienda");
-    expect(orderStatusLabel("PAID", { mode: "roleplay" })).toBe("Aceptado, en preparación");
-    expect(orderStampLabel("PAID", { mode: "roleplay" })).toBe("En preparación");
-    expect(orderStampLabel("PENDING", { mode: "roleplay" })).toBe(m.roleplay.status.stamp.PENDING);
-    expect(orderStatusHelp("PENDING", { mode: "roleplay" })).toContain("aceptar");
-    expect(orderStepLabel("READY", "roleplay")).toBe(m.roleplay.status.steps.READY);
+    expect(orderStatusLabel(m, "PENDING", { mode: "roleplay" })).toBe("Esperando a la tienda");
+    expect(orderStatusLabel(m, "PAID", { mode: "roleplay" })).toBe("Aceptado, en preparación");
+    expect(orderStampLabel(m, "PAID", { mode: "roleplay" })).toBe("En preparación");
+    expect(orderStampLabel(m, "PENDING", { mode: "roleplay" })).toBe(m.roleplay.status.stamp.PENDING);
+    expect(orderStatusHelp(m, "PENDING", { mode: "roleplay" })).toContain("aceptar");
+    expect(orderStepLabel(m, "READY", "roleplay")).toBe(m.roleplay.status.steps.READY);
   });
 
   it("leaves the other statuses as they are in roleplay mode", () => {
     for (const status of ["READY", "COLLECTED", "FAILED", "REFUNDED"] as const) {
-      expect(orderStatusLabel(status, { mode: "roleplay" })).toBe(m.status.order[status]);
-      expect(orderStampLabel(status, { mode: "roleplay" })).toBe(m.status.orderStamp[status]);
-      expect(orderStatusHelp(status, { mode: "roleplay" })).toBe(m.status.orderHelp[status]);
+      expect(orderStatusLabel(m, status, { mode: "roleplay" })).toBe(m.status.order[status]);
+      expect(orderStampLabel(m, status, { mode: "roleplay" })).toBe(m.status.orderStamp[status]);
+      expect(orderStatusHelp(m, status, { mode: "roleplay" })).toBe(m.status.orderHelp[status]);
     }
-    expect(orderStepLabel("COLLECTED", "roleplay")).toBe(m.account.order.steps.COLLECTED);
+    expect(orderStepLabel(m, "COLLECTED", "roleplay")).toBe(m.account.order.steps.COLLECTED);
   });
 
   it("shows a PENDING order being charged as processing in both modes", () => {
     for (const mode of ["automatic", "roleplay"] as const) {
-      expect(orderStatusLabel("PENDING", { processing: true, mode })).toBe(m.status.processing);
-      expect(orderStampLabel("PENDING", { processing: true, mode })).toBe(m.status.processingStamp);
+      expect(orderStatusLabel(m, "PENDING", { processing: true, mode })).toBe(m.status.processing);
+      expect(orderStampLabel(m, "PENDING", { processing: true, mode })).toBe(m.status.processingStamp);
     }
-    expect(orderStatusHelp("PENDING", { processing: true })).toBe(m.status.processingHelp);
-    expect(orderStatusHelp("PENDING", { processing: true, mode: "roleplay" })).toBe(m.roleplay.status.processingHelp);
+    expect(orderStatusHelp(m, "PENDING", { processing: true })).toBe(m.status.processingHelp);
+    expect(orderStatusHelp(m, "PENDING", { processing: true, mode: "roleplay" })).toBe(m.roleplay.status.processingHelp);
   });
 });
 
 describe("failureReasonText", () => {
   it("translates the plugin codes and keeps unknown ones visible", () => {
-    expect(failureReasonText("INSUFFICIENT_FUNDS")).toContain("saldo");
-    expect(failureReasonText("SOMETHING_NEW")).toContain("SOMETHING_NEW");
-    expect(failureReasonText(null)).toBeNull();
+    expect(failureReasonText(m, "INSUFFICIENT_FUNDS")).toContain("saldo");
+    expect(failureReasonText(m, "SOMETHING_NEW")).toContain("SOMETHING_NEW");
+    expect(failureReasonText(m, null)).toBeNull();
   });
 
   it("translates the roleplay codes", () => {
-    expect(failureReasonText("SHOP_REJECTED")).toBe(m.roleplay.failureReason.SHOP_REJECTED);
-    expect(failureReasonText("EXPIRED")).toBe(m.roleplay.failureReason.EXPIRED);
-    expect(failureReasonText("DELIVERY_EXPIRED")).toBe(m.roleplay.failureReason.DELIVERY_EXPIRED);
-    expect(failureReasonText("DELIVERY_EXPIRED")).toContain("devuelto");
-    expect(failureReasonText("INVALID_TIP")).toBe(m.roleplay.failureReason.INVALID_TIP);
+    expect(failureReasonText(m, "SHOP_REJECTED")).toBe(m.roleplay.failureReason.SHOP_REJECTED);
+    expect(failureReasonText(m, "EXPIRED")).toBe(m.roleplay.failureReason.EXPIRED);
+    expect(failureReasonText(m, "DELIVERY_EXPIRED")).toBe(m.roleplay.failureReason.DELIVERY_EXPIRED);
+    expect(failureReasonText(m, "DELIVERY_EXPIRED")).toContain("devuelto");
+    expect(failureReasonText(m, "INVALID_TIP")).toBe(m.roleplay.failureReason.INVALID_TIP);
   });
 });
 
@@ -115,12 +118,12 @@ describe("cancelled orders", () => {
   it("reads Cancelado instead of Fallido, in both modes", () => {
     for (const mode of ["automatic", "roleplay"] as const) {
       const options = { mode, failureReason: "SHOP_REJECTED" };
-      expect(orderStampLabel("FAILED", options)).toBe(m.status.cancelled.stamp);
-      expect(orderStatusLabel("FAILED", options)).toBe(m.status.cancelled.order);
-      expect(orderStatusHelp("FAILED", options)).toBe(m.status.cancelled.help);
-      expect(orderStepLabel("FAILED", mode, "EXPIRED")).toBe(m.status.cancelled.order);
+      expect(orderStampLabel(m, "FAILED", options)).toBe(m.status.cancelled.stamp);
+      expect(orderStatusLabel(m, "FAILED", options)).toBe(m.status.cancelled.order);
+      expect(orderStatusHelp(m, "FAILED", options)).toBe(m.status.cancelled.help);
+      expect(orderStepLabel(m, "FAILED", mode, "EXPIRED")).toBe(m.status.cancelled.order);
     }
-    expect(orderStampLabel("FAILED", { failureReason: "PAYMENT_ERROR" })).toBe(m.status.orderStamp.FAILED);
-    expect(orderStepLabel("FAILED", "roleplay", "PAYMENT_ERROR")).toBe(m.account.order.steps.FAILED);
+    expect(orderStampLabel(m, "FAILED", { failureReason: "PAYMENT_ERROR" })).toBe(m.status.orderStamp.FAILED);
+    expect(orderStepLabel(m, "FAILED", "roleplay", "PAYMENT_ERROR")).toBe(m.account.order.steps.FAILED);
   });
 });

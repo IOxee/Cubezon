@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { m } from "@/i18n";
+import { useMessages } from "@/i18n/client";
 
 export type ToastTone = "success" | "error";
 
@@ -53,6 +53,7 @@ export function Toaster() {
 }
 
 function ToastItem({ toast: item, onClose }: { toast: Toast; onClose: (id: number) => void }) {
+  const m = useMessages();
   const [paused, setPaused] = useState(false);
   const closeRef = useRef(onClose);
   useEffect(() => {

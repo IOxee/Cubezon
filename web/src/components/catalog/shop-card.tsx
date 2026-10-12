@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { fmt, m, plural } from "@/i18n";
+import { fmt, plural } from "@/i18n";
 import type { ShopSummary } from "@/lib/data/shops";
-import { formatInteger } from "@/lib/format";
+import { getFormat, getMessages } from "@/i18n/server";
 import { inkStyle } from "@/lib/inks";
 import { shopMediaUrl } from "@/lib/shop-media";
 import { Rating } from "@/components/ui/rating";
@@ -9,7 +9,8 @@ import { ShopSeal } from "@/components/ui/shop-mark";
 import { Stamp } from "@/components/ui/stamp";
 
 /** Shop directory card: ink strip, logo or seal, name, owner, tagline, description and numbers. */
-export function ShopCard({ shop }: { shop: ShopSummary }) {
+export async function ShopCard({ shop }: { shop: ShopSummary }) {
+  const [m, f] = await Promise.all([getMessages(), getFormat()]);
   const t = m.catalog.shops;
   return (
     <article className="lift card relative flex h-full flex-col" style={inkStyle(shop.ink)}>
@@ -33,8 +34,8 @@ export function ShopCard({ shop }: { shop: ShopSummary }) {
           {shop.tagline ? <p className="line-clamp-1 text-sm font-semibold">{shop.tagline}</p> : null}
           <p className="line-clamp-2 text-sm text-ink-2">{shop.description || t.noDescription}</p>
           <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 text-xs text-ink-2">
-            <span className="num">{plural(shop.listingCount, t.listings, { count: formatInteger(shop.listingCount) })}</span>
-            <span className="num">{plural(shop.unitsSold, t.sold, { count: formatInteger(shop.unitsSold) })}</span>
+            <span className="num">{plural(shop.listingCount, t.listings, { count: f.integer(shop.listingCount) })}</span>
+            <span className="num">{plural(shop.unitsSold, t.sold, { count: f.integer(shop.unitsSold) })}</span>
             <Rating value={shop.ratingAvg} count={shop.ratingCount} showCount={false} />
           </div>
         </div>

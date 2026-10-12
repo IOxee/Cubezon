@@ -1,19 +1,17 @@
-import { fmt, m, plural } from "@/i18n";
+import { fmt, plural, type Messages } from "@/i18n";
+import { getFormat, getMessages } from "@/i18n/server";
 import type { SellerOrder } from "@/lib/data/seller";
-import { formatAmount, formatDateTime, formatInteger, serialOf } from "@/lib/format";
+import { serialOf, type Format } from "@/lib/format";
 import { DEFAULT_ORDERS_MODE, isProcessing, sellerPayout, type OrdersMode } from "@/lib/order-display";
 import { ItemIcon } from "@/components/ui/item-icon";
 import { OrderStatusStamp } from "@/components/ui/order-status";
 import { Price } from "@/components/ui/price";
 
-const columns = m.seller.orders.columns;
-const payout = m.roleplay.panel.payout;
-
 /**
  * Orders of the seller's shop: who bought what, where it is picked up, its status and when the
  * shop got the money. `mode` is the order mode of the plugin (roleplay changes some statuses).
  */
-export function OrdersTable({
+export async function OrdersTable({
   orders,
   caption,
   mode = DEFAULT_ORDERS_MODE,
@@ -22,6 +20,9 @@ export function OrdersTable({
   caption: string;
   mode?: OrdersMode;
 }) {
+  const [m, f] = await Promise.all([getMessages(), getFormat()]);
+  const columns = m.seller.orders.columns;
+  const payout = m.roleplay.panel.payout;
   return (
     <div className="overflow-x-auto border-2 border-edge bg-surface">
       <table className="w-full min-w-[880px] text-sm">
@@ -43,7 +44,7 @@ export function OrdersTable({
           {orders.map((order) => (
             <tr key={order.id} className="border-b border-line last:border-b-0">
               <td className="num px-3 py-2 text-xs whitespace-nowrap text-ink-2">{serialOf(order.id)}</td>
-              <td className="num px-3 py-2 text-xs whitespace-nowrap text-ink-2">{formatDateTime(order.createdAt)}</td>
+              <td className="num px-3 py-2 text-xs whitespace-nowrap text-ink-2">{f.dateTime(order.createdAt)}</td>
               <td className="px-3 py-2 font-semibold">{order.buyerName ?? m.seller.orders.unknownBuyer}</td>
               <td className="px-3 py-2">
                 {order.listing ? (
@@ -56,7 +57,7 @@ export function OrdersTable({
                 )}
               </td>
               <td className="px-3 py-2 text-right whitespace-nowrap">
-                <span className="num font-semibold">{formatInteger(order.quantity)}</span>
+                <span className="num font-semibold">{f.integer(order.quantity)}</span>
                 {order.listing && order.listing.unitAmount > 1 ? (
                   <span className="block text-xs text-ink-3">
                     {plural(order.quantity * order.listing.unitAmount, m.seller.orders.items)}
@@ -67,12 +68,12 @@ export function OrdersTable({
                 <Price amount={order.total} size="sm" />
                 {order.expressFee > 0 ? (
                   <span className="num block text-xs text-ink-3">
-                    {fmt(m.seller.orders.expressExtra, { amount: formatAmount(order.expressFee) })}
+                    {fmt(m.seller.orders.expressExtra, { amount: f.amount(order.expressFee) })}
                   </span>
                 ) : null}
                 {order.tip > 0 ? (
                   <span className="num block text-xs text-ink-3">
-                    {fmt(m.seller.orders.tipExtra, { amount: formatAmount(order.tip) })}
+                    {fmt(m.seller.orders.tipExtra, { amount: f.amount(order.tip) })}
                   </span>
                 ) : null}
               </td>
@@ -89,7 +90,7 @@ export function OrdersTable({
                 />
               </td>
               <td className="px-3 py-2 whitespace-nowrap">
-                <PayoutCell order={order} mode={mode} />
+                <PayoutCell order={order} mode={mode} m={m} f={f} />
               </td>
             </tr>
           ))}
@@ -100,10 +101,11 @@ export function OrdersTable({
 }
 
 /** «Cobrado» column: the payout date, or why there is none yet. */
-function PayoutCell({ order, mode }: { order: SellerOrder; mode: OrdersMode }) {
+function PayoutCell({ order, mode, m, f }: { order: SellerOrder; mode: OrdersMode; m: Messages; f: Format }) {
+  const payout = m.roleplay.panel.payout;
   const state = sellerPayout(order);
   if (state === "paid" && order.sellerPaidAt) {
-    return <span className="num text-xs text-success">{formatDateTime(order.sellerPaidAt)}</span>;
+    return <span className="num text-xs text-success">{f.dateTime(order.sellerPaidAt)}</span>;
   }
   if (state === "pending") {
     // In roleplay the money is held from acceptance (PAID) until the package reaches the locker.

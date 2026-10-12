@@ -14,10 +14,15 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-/** Player-facing texts loaded from lang/{locale}.yml, falling back to the bundled copy. */
+/** Player-facing texts loaded from lang/{locale}.yml (en by default), falling back to the bundled copy. */
 public final class Messages {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+    /** Language used when config.yml has no locale, and fallback for custom locales. */
+    static final String DEFAULT_LOCALE = "en";
+    private static final String DEFAULT_PATH = "lang/" + DEFAULT_LOCALE + ".yml";
+    /** Languages shipped in the jar; each one is copied to plugins/Cubezon/lang/ and kept up to date. */
+    static final List<String> BUNDLED_LOCALES = List.of("en", "es");
 
     private final JavaPlugin plugin;
     private YamlConfiguration lang;
@@ -28,36 +33,56 @@ public final class Messages {
     }
 
     public void reload() {
-        String locale = plugin.getConfig().getString("locale", "es");
+        String locale = plugin.getConfig().getString("locale", DEFAULT_LOCALE);
+        // Every bundled language is copied and kept up to date, so admins can switch between them.
+        YamlConfiguration selected = null;
+        for (String bundledLocale : BUNDLED_LOCALES) {
+            YamlConfiguration loaded = prepare(bundledLocale);
+            if (bundledLocale.equals(locale)) {
+                selected = loaded;
+            }
+        }
+        lang = selected != null ? selected : prepare(locale);
+    }
+
+    /**
+     * Loads lang/{locale}.yml from the data folder: copies the bundled file if missing, replaces it
+     * when outdated (keeping a backup) and adds the texts it lacks. Missing keys fall back to the
+     * bundled copy of that locale, or to the default language for custom locales.
+     */
+    private YamlConfiguration prepare(String locale) {
         String path = "lang/" + locale + ".yml";
         File file = new File(plugin.getDataFolder(), path);
-        if (!file.exists() && plugin.getResource(path) != null) {
+        boolean isBundled = plugin.getResource(path) != null;
+        if (!file.exists() && isBundled) {
             plugin.saveResource(path, false);
         }
-        lang = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration loaded = YamlConfiguration.loadConfiguration(file);
 
         InputStream bundled = plugin.getResource(path);
         if (bundled == null) {
-            bundled = plugin.getResource("lang/es.yml");
+            bundled = plugin.getResource(DEFAULT_PATH);
         }
-        if (bundled != null) {
-            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(bundled, StandardCharsets.UTF_8));
-            if (isOutdated(lang, defaults) && file.exists() && plugin.getResource(path) != null) {
-                lang = replaceOutdated(file, path, lang.getInt("lang-version", 1));
-            }
-            lang.setDefaults(defaults);
-            // Show texts added by newer versions in the server's copy, so they can be edited too.
-            List<String> added = YamlDefaults.addMissing(lang, defaults);
-            if (!added.isEmpty() && file.exists()) {
-                try {
-                    lang.save(file);
-                    plugin.getLogger().info("Added " + added.size() + " new texts to " + path + ".");
-                } catch (IOException e) {
-                    plugin.getLogger().warning("Could not update " + path + ": " + e.getMessage());
-                }
+        if (bundled == null) {
+            return loaded;
+        }
+        YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                new InputStreamReader(bundled, StandardCharsets.UTF_8));
+        if (isOutdated(loaded, defaults) && file.exists() && isBundled) {
+            loaded = replaceOutdated(file, path, loaded.getInt("lang-version", 1));
+        }
+        loaded.setDefaults(defaults);
+        // Show texts added by newer versions in the server's copy, so they can be edited too.
+        List<String> added = YamlDefaults.addMissing(loaded, defaults);
+        if (!added.isEmpty() && file.exists()) {
+            try {
+                loaded.save(file);
+                plugin.getLogger().info("Added " + added.size() + " new texts to " + path + ".");
+            } catch (IOException e) {
+                plugin.getLogger().warning("Could not update " + path + ": " + e.getMessage());
             }
         }
+        return loaded;
     }
 
     /**

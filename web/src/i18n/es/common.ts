@@ -137,6 +137,12 @@ export const common = {
     employee: "Empleado",
   },
 
+  language: {
+    label: "Idioma",
+    en: "English",
+    es: "Español",
+  },
+
   theme: {
     label: "Tema",
     system: "Sistema",

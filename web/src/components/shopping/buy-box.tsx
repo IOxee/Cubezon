@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { addToCartAction, type AddToCartState } from "@/app/cart/actions";
-import { fmt, m, plural } from "@/i18n";
+import { addToCartAction, type AddToCartState } from "@/app/[lang]/cart/actions";
+import { fmt, plural } from "@/i18n";
+import { useFormat, useMessages } from "@/i18n/client";
 import { MAX_UNITS_PER_LINE, lineTotalCents, maxUnits } from "@/lib/cart";
 import type { CatalogItem, Locker } from "@/lib/data/catalog";
-import { formatMoney, fromCents } from "@/lib/format";
+import { fromCents } from "@/lib/format";
 import { Notice } from "@/components/ui/notice";
 import { Price } from "@/components/ui/price";
 import { Stamp } from "@/components/ui/stamp";
@@ -20,6 +21,8 @@ const INITIAL: AddToCartState = { status: "idle" };
  * action and the checkout check it with fresh data and only say when there is not enough.
  */
 export function BuyBox({ item, lockers }: { item: CatalogItem; lockers: Locker[] }) {
+  const m = useMessages();
+  const f = useFormat();
   const t = m.shopping.buyBox;
   const max = maxUnits(item.unitsAvailable);
   const [chosen, setChosen] = useState(1);
@@ -76,7 +79,7 @@ export function BuyBox({ item, lockers }: { item: CatalogItem; lockers: Locker[]
           </div>
           {item.unitAmount > 1 ? (
             <p className="text-xs text-ink-3">
-              {plural(units * item.unitAmount, t.itemsTotal)} · {fmt(m.money.perItem, { price: formatMoney(item.pricePerItem) })}
+              {plural(units * item.unitAmount, t.itemsTotal)} · {fmt(m.money.perItem, { price: f.money(item.pricePerItem) })}
             </p>
           ) : null}
 

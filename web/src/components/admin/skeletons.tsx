@@ -1,6 +1,7 @@
-import { m } from "@/i18n";
+import { getMessages } from "@/i18n/server";
 
-function Loading() {
+async function Loading() {
+  const m = await getMessages();
   return <span className="sr-only">{m.a11y.loading}</span>;
 }
 
