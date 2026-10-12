@@ -1,6 +1,6 @@
 # GitHub only keeps traffic (views, clones, referrers) for 14 days.
-# This snapshots it daily into the `github-repo-stats` branch so the history is never lost,
-# and renders a report at IOxee/Cubezon/latest-report/report.md on that branch.
+# Each run carries the history over from the previous run's artifact, merges the API window
+# and writes the report to the job summary. No commits, no data branch.
 name: Repo stats
 
 on:
@@ -10,18 +10,45 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: repo-stats
   cancel-in-progress: false
 
+env:
+  HISTORY_ARTIFACT: traffic-history
+  HISTORY_CSV: history/traffic.csv
+
 jobs:
   snapshot:
     runs-on: ubuntu-latest
     steps:
-      - name: Collect traffic and build report
-        uses: jgehrcke/github-repo-stats@v1.4.2
+      - uses: actions/checkout@v4
         with:
-          # Fine-grained PAT scoped to this repo: Administration (read) for traffic, Contents (read/write) to push the data branch.
-          ghtoken: ${{ secrets.GHRS_GITHUB_API_TOKEN }}
-          databranch: github-repo-stats
+          sparse-checkout: .github/scripts
+
+      - name: Restore history from the previous run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous=$(gh run list -R "$GITHUB_REPOSITORY" -w repo-stats.yml -s success -L 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -z "$previous" ]; then
+            echo "::notice::No previous successful run; starting a new history."
+          elif ! gh run download "$previous" -R "$GITHUB_REPOSITORY" -n "$HISTORY_ARTIFACT" -D history; then
+            echo "::warning::Run $previous has no $HISTORY_ARTIFACT artifact; starting a new history."
+          fi
+
+      - name: Collect traffic and write summary
+        env:
+          # Fine-grained PAT scoped to this repo with Administration (read): GITHUB_TOKEN cannot read traffic.
+          GH_TOKEN: ${{ secrets.GHRS_GITHUB_API_TOKEN }}
+        run: python .github/scripts/traffic_summary.py
+
+      - name: Save history for the next run
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.HISTORY_ARTIFACT }}
+          path: ${{ env.HISTORY_CSV }}
+          retention-days: 90
+          if-no-files-found: error
