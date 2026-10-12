@@ -10,11 +10,19 @@ import { clientIp, createRateLimiter } from "@/lib/rate-limit";
 export type SignInState = { error: string | null; code: string };
 
 /**
- * 10 attempts per IP every 10 minutes (in memory, per server instance). A code has 32^6
+ * 10 attempts per IP every 10 minutes (in memory, per server instance). A code has 31^6
  * combinations and expires in minutes, so this is plenty to stop guessing. Successful logins
  * count too: otherwise a player could reset the limit with codes of their own account.
  */
 const limiter = createRateLimiter({ limit: 10, windowMs: 10 * 60 * 1000 });
+
+/**
+ * Ceiling for all IPs together, so rotating addresses (a botnet, or a proxy that lets the
+ * client choose its IP) still cannot try codes at scale. Far above what a Minecraft server's
+ * players need: at worst they wait a few minutes during an attack.
+ */
+const GLOBAL_KEY = "*";
+const globalLimiter = createRateLimiter({ limit: 300, windowMs: 10 * 60 * 1000 });
 
 export async function signInAction(_prev: SignInState, formData: FormData): Promise<SignInState> {
   const t = m.account.signIn.errors;
@@ -25,9 +33,11 @@ export async function signInAction(_prev: SignInState, formData: FormData): Prom
   if (!code) return { error: t.format, code: typed };
 
   const requestHeaders = await headers();
-  const ip = clientIp(requestHeaders.get("x-forwarded-for"), requestHeaders.get("x-real-ip"));
-  const limit = limiter.hit(ip);
+  const ip = clientIp((name) => requestHeaders.get(name));
+  const perIp = limiter.hit(ip);
+  const limit = perIp.ok ? globalLimiter.hit(GLOBAL_KEY) : perIp;
   if (!limit.ok) {
+    if (limit !== perIp) console.warn("signIn: global link-code limit reached");
     return { error: fmt(t.tooMany, { minutes: Math.max(1, Math.ceil(limit.retryAfterMs / 60_000)) }), code: typed };
   }
 

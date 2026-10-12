@@ -22,6 +22,7 @@ Memoria entre sesiones de esta app. Manténla breve, idealmente unas 50 líneas:
 - Decisiones del 2026-10-11 para lo pendiente: el panel de funciones del owner (B5) será una página admin **en la web** (la hace la sesión de la web; el plugin tendrá que leer esos interruptores de la BD); la foto de producto (C9) la suben el dueño y los empleados con `products.manage`, sin cola de moderación (el admin puede retirarla).
 - Pendiente del plan del 2026-10-11: nada de código; `cubezon.admin.panel` sigue declarado sin uso (el panel acabó en la web). Ideas futuras: teléfono con ubicación del repartidor y entrega «ACME» con bengala/barril (dependen de C7 y C8).
 - Pendiente (2026-10-11): reportaron que no-admins usaban `computer give`/abrían ordenadores ajenos y que no se depositan objetos de Slimefun. En el código no hay hueco para un jugador sin `cubezon.admin` (solo OP salta los controles). Falta reproducirlo con una cuenta no OP (¿era OP?) y, para Slimefun, el mensaje exacto del depósito y `/cz item info`: candidatos EXACT/`isSimilar`, `unitFitsInOneStack` o la clave `slimefun:slimefun_item` (esa sí es la de Slimefun United).
+- 2026-10-12, preparación para publicar en LinkedIn (decisión del usuario: sin servidor ni web alojada, solo capturas, vídeo y repo público). Revisión de seguridad: sin secretos en el historial. Arreglado: el IP del límite de login sale de cabeceras de la plataforma o de la última entrada de XFF (antes la primera, falsificable), más un tope global de 300 intentos cada 10 min; cabeceras de seguridad en `next.config.ts` (sin CSP de scripts, que exigiría nonces y rompería el prerender); `safeNextPath` rechaza espacios y caracteres de control. Migración `20261012190000_revoke_definer_lookups_from_authenticated` (sin aplicar). Nuevo: CI en `.github/workflows/ci.yml`, capturas en `docs/media/` (con `next start` y Edge headless; el móvil con el navegador porque el headless no baja de ~500 px), carrusel y guía para el perfil de LinkedIn en `docs/linkedin/` (fuera de git: GitHub en inglés, LinkedIn en español; descripción y topics del repo puestos con `gh`). Pendientes de la revisión que no se tocaron: límite de pedidos PENDING por comprador (M2) y columnas públicas de `shops` (L3).
 - Migraciones (todas con `db push`): plugin 20261009160000, 180000, 190000, 200000, 220000, 230000, 250000, 270000, 280000, 20261010090000 y 20261010110000; las demás son de la web.
 - Web (2026-10-09): prototipo funcional (ver `docs/web.md`). Incluye:
   - comprador: catálogo, búsqueda con filtros, ficha, tiendas, taquillas, ayuda, login con el código de `/cz vincular`, carrito (cookie), caja (crea pedidos `PENDING`), pedidos con seguimiento y valoraciones;
@@ -73,7 +74,7 @@ Memoria entre sesiones de esta app. Manténla breve, idealmente unas 50 líneas:
 
 ## Próximos pasos
 1. Nombre provisional «Cubezon»; confirmar el definitivo (sin logo ni marca de Amazon).
-2. Rotar la secret key de Supabase (se compartió en el chat).
+2. Rotar la secret key de Supabase (se compartió en el chat) antes de hacer público el repo. Seguir el checklist de `docs/linkedin/post.md`.
 3. Probar en el juego el ciclo completo: depositar → comprar en la web → READY → recoger en la taquilla.
 4. Web: selector de tema, temas de superadmin, zona y almacenes de tienda en el panel de admin.
 

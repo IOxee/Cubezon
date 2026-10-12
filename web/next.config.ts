@@ -32,9 +32,26 @@ const LEGACY_PATHS: [from: string, to: string][] = [
   ["/panel/:shop/tienda", "/panel/:shop/shop"],
 ];
 
+/**
+ * Security headers for every response. No script-src CSP: it would need a per-request nonce,
+ * which turns every page dynamic and defeats the prerendered shell (Cache Components). React
+ * escaping, the validated theme CSS and image uploads restricted to PNG/JPEG/WebP cover XSS.
+ */
+const SECURITY_HEADERS = [
+  // Nobody may frame the site (clickjacking on the seller panel and admin forms).
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+];
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
   async redirects() {
     // ":path*" also matches nothing, so each entry covers the page itself and everything below it.
     return LEGACY_PATHS.map(([from, to]) => ({

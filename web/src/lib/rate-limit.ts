@@ -63,14 +63,24 @@ export function createRateLimiter({ limit, windowMs }: { limit: number; windowMs
   };
 }
 
+/** Headers that the hosting platform sets itself (a client cannot forge them there). */
+const TRUSTED_IP_HEADERS = ["x-vercel-forwarded-for", "cf-connecting-ip", "x-real-ip"] as const;
+
 /**
- * Client IP from an x-forwarded-for value: the first address of the list (the client as
- * seen by the first proxy). Falls back to "unknown", so every request without the header
- * shares one bucket.
+ * Client IP for rate limiting. Uses a platform-set header when there is one; otherwise the
+ * last x-forwarded-for entry, which is the one the nearest proxy appended (everything before
+ * it comes from the client and can be spoofed to dodge the limit). Falls back to "unknown",
+ * so every request without those headers shares one bucket.
  */
-export function clientIp(forwardedFor: string | null | undefined, realIp?: string | null): string {
-  const first = forwardedFor?.split(",")[0]?.trim();
-  if (first) return first.slice(0, 64);
-  const real = realIp?.trim();
-  return real ? real.slice(0, 64) : "unknown";
+export function clientIp(getHeader: (name: string) => string | null | undefined): string {
+  for (const name of TRUSTED_IP_HEADERS) {
+    const value = getHeader(name)?.trim();
+    if (value) return value.slice(0, 64);
+  }
+  const last = getHeader("x-forwarded-for")
+    ?.split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .at(-1);
+  return last ? last.slice(0, 64) : "unknown";
 }

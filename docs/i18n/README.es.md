@@ -6,6 +6,21 @@ Un marketplace parodia para un servidor de Minecraft. Las tiendas de jugadores a
 
 > Proyecto de portfolio. Sin relación con Amazon ni con Mojang. Solo se usa dinero del juego.
 
+[![CI](https://github.com/IOxee/Cubezon/actions/workflows/ci.yml/badge.svg)](https://github.com/IOxee/Cubezon/actions/workflows/ci.yml)
+
+![Portada de Cubezon](../media/home-light.png)
+
+<table>
+  <tr>
+    <td><img src="../media/catalog-light.png" alt="Catálogo con filtros"></td>
+    <td><img src="../media/product-light.png" alt="Ficha de producto"></td>
+  </tr>
+  <tr>
+    <td><img src="../media/shop-light.png" alt="Escaparate de una tienda"></td>
+    <td><img src="../media/home-dark.png" alt="Tema oscuro"></td>
+  </tr>
+</table>
+
 ## Cómo funciona
 
 ```
@@ -59,7 +74,8 @@ Un marketplace parodia para un servidor de Minecraft. Las tiendas de jugadores a
 plugin/               Plugin Paper (pedidos, escrow, taquillas, buzones, almacenes, ordenador roleplay)
 web/                  Marketplace Next.js, panel de vendedor y administración
 supabase/migrations/  Esquema SQL, compartido por el plugin y la web
-docs/                 Notas de arquitectura de la web y datos de objetos
+docs/                 Notas de arquitectura de la web, datos de objetos y capturas
+.github/workflows/    CI: build y JUnit del plugin, lint, typecheck y Vitest de la web
 DESIGN.md             Sistema de diseño visual de la web («Cartilla», en inglés)
 AGENTS.md             Reglas de dominio y convenciones para agentes de código (en inglés)
 MEMORY.md             Notas de trabajo entre sesiones

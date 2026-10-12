@@ -34,7 +34,19 @@ describe("safeNextPath", () => {
   });
 
   it("falls back for external or malformed targets", () => {
-    for (const raw of ["https://evil.example", "//evil.example", "/\\evil.example", "checkout", "", null, undefined, 1]) {
+    for (const raw of [
+      "https://evil.example",
+      "//evil.example",
+      "/\\evil.example",
+      "/\t/evil.example",
+      "/\n/evil.example",
+      "/orders/a b",
+      "checkout",
+      "",
+      null,
+      undefined,
+      1,
+    ]) {
       expect(safeNextPath(raw)).toBe("/account");
     }
   });

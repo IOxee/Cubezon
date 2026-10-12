@@ -1,4 +1,4 @@
-# AGENTS.md — Cubezon (working title)
+# AGENTS.md — Cubezon
 
 "Amazon parody" style marketplace for a Minecraft server: admin-approved shops sell in-game items for in-game money from a website, and the buyer picks up the order from a locker inside the game. Portfolio project.
 

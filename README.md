@@ -1,10 +1,32 @@
 # Cubezon
 
+[![CI](https://github.com/IOxee/Cubezon/actions/workflows/ci.yml/badge.svg)](https://github.com/IOxee/Cubezon/actions/workflows/ci.yml)
+![Java 21](https://img.shields.io/badge/Java-21-1F2421)
+![Paper 1.21](https://img.shields.io/badge/Paper-1.21.11-1F2421)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-1F2421)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-1F2421)
+[![License: MIT](https://img.shields.io/badge/License-MIT-D9A21B)](LICENSE)
+
 **English** · [Español](docs/i18n/README.es.md)
 
 A parody marketplace for a Minecraft server. Approved player shops sell in-game items for in-game money on a website, and buyers pick up their orders from a locker (or their own mailbox) inside the game.
 
 > Portfolio project. Not affiliated with Amazon or Mojang. Only in-game money is ever involved.
+
+![Cubezon home page](docs/media/home-light.png)
+
+<table>
+  <tr>
+    <td><img src="docs/media/catalog-light.png" alt="Catalog with filters"></td>
+    <td><img src="docs/media/product-light.png" alt="Product page with buy box"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/media/shop-light.png" alt="Shop storefront"></td>
+    <td><img src="docs/media/home-dark.png" alt="Dark theme"></td>
+  </tr>
+</table>
+
+<!-- Demo video: drag the .mp4 into this README on github.com to upload it and paste the generated link here. -->
 
 ## How it works
 
@@ -59,7 +81,8 @@ A parody marketplace for a Minecraft server. Approved player shops sell in-game 
 plugin/               Paper plugin (orders, escrow, lockers, mailboxes, storage, roleplay computer)
 web/                  Next.js marketplace, seller panel and admin
 supabase/migrations/  SQL schema, shared by the plugin and the web
-docs/                 Web architecture notes and item data
+docs/                 Web architecture notes, item data and screenshots
+.github/workflows/    CI: plugin build + JUnit, web lint + typecheck + Vitest
 DESIGN.md             Visual design system of the web ("Cartilla")
 AGENTS.md             Domain rules and conventions for coding agents
 MEMORY.md             Working notes between sessions (Spanish)
@@ -138,6 +161,15 @@ Player-facing texts are in Spanish and live in `plugin/src/main/resources/lang/e
 cd plugin && ./gradlew test
 cd web && npm test && npm run typecheck && npm run lint
 ```
+
+## Security
+
+- The publishable key can only read public data (RLS on every table); the secret key never leaves the web server.
+- Every seller and admin action re-checks permissions in SQL (`shop_member_can`), not only in the UI.
+- Sign-in codes are single-use, expire in minutes and are rate limited per IP and globally.
+- Uploads are capped at 2 MB and sniffed by magic bytes (PNG, JPEG, WebP only).
+
+Found something? Please open a private [security advisory](https://github.com/IOxee/Cubezon/security/advisories/new) instead of a public issue.
 
 ## License
 
