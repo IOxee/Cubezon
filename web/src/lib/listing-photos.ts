@@ -1,3 +1,5 @@
+import { supabaseUrl } from "@/lib/supabase/url";
+
 /**
  * Product photos in the public Storage bucket "listing-photos". The owner or staff with
  * products.manage upload them from the seller panel; an admin can take any of them down. Same
@@ -22,7 +24,7 @@ export function isListingPhotoPathOf(listingId: string, path: string | null | un
 /** Public URL of a photo, or null when there is none. */
 export function listingPhotoUrl(
   path: string | null | undefined,
-  baseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL,
+  baseUrl: string | undefined = supabaseUrl(),
 ): string | null {
   if (!path || !baseUrl) return null;
   const encoded = path.split("/").map(encodeURIComponent).join("/");

@@ -1,0 +1,145 @@
+# Publishes a GitHub release when a version tag (v0.1.0, …) is pushed: the plugin jar and a
+# self-contained build of the web. The web is built against a throwaway local Supabase with the
+# migrations applied and no data, and reads the real Supabase settings at runtime, so the zip
+# carries no data and no keys.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  versions:
+    name: Check versions match the tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          plugin=$(sed -n 's/^version=//p' plugin/gradle.properties)
+          web=$(jq -r .version web/package.json)
+          echo "tag=$tag plugin=$plugin web=$web"
+          if [ "$plugin" != "$tag" ] || [ "$web" != "$tag" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match plugin ($plugin) and web ($web) versions."
+            exit 1
+          fi
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  plugin:
+    name: Plugin jar
+    needs: versions
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - run: ./gradlew build --no-daemon
+      - run: cp "build/libs/cubezon-plugin-${{ needs.versions.outputs.version }}.jar" "Cubezon-${{ needs.versions.outputs.version }}.jar"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin
+          path: plugin/Cubezon-${{ needs.versions.outputs.version }}.jar
+          if-no-files-found: error
+
+  web:
+    name: Web standalone zip
+    needs: versions
+    runs-on: ubuntu-latest
+    env:
+      ZIP: cubezon-web-${{ needs.versions.outputs.version }}.zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start an empty local Supabase with the migrations
+        run: |
+          supabase init --force
+          supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+          supabase status -o json > /tmp/sb.json
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL /tmp/sb.json)"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(jq -r .PUBLISHABLE_KEY /tmp/sb.json)"
+            echo "SUPABASE_SECRET_KEY=$(jq -r .SECRET_KEY /tmp/sb.json)"
+          } >> "$GITHUB_ENV"
+
+      - name: Build
+        working-directory: web
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package
+        run: |
+          out=dist/cubezon-web
+          mkdir -p "$out/.next"
+          cp -r web/.next/standalone/. "$out/"
+          cp -r web/.next/static "$out/.next/"
+          if [ -d web/public ]; then cp -r web/public "$out/"; fi
+          cp web/scripts/release-readme.md "$out/README.md"
+          find "$out" -name '.env*' -print -delete
+
+      - name: Check that nothing of the build environment leaked
+        run: |
+          for value in "$NEXT_PUBLIC_SUPABASE_URL" "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" "$SUPABASE_SECRET_KEY"; do
+            if grep -rqF "$value" dist/cubezon-web; then
+              echo "::error::A build-time Supabase value is baked into the output."
+              grep -rlF "$value" dist/cubezon-web | head
+              exit 1
+            fi
+          done
+
+      - name: Zip
+        working-directory: dist
+        run: zip -qr "$ZIP" cubezon-web
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: dist/${{ env.ZIP }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: [versions, plugin, web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            -R "$GITHUB_REPOSITORY" \
+            --title "Cubezon ${{ needs.versions.outputs.version }}" \
+            --generate-notes

@@ -1,3 +1,5 @@
+import { supabaseUrl } from "@/lib/supabase/url";
+
 /**
  * Shop images (logo and banner) in the public Storage bucket "shop-media". Pure helpers shared
  * by the server (validation before the upload, object paths) and the client (quick checks
@@ -107,7 +109,7 @@ export function isShopMediaPathOf(shopId: string, path: string | null | undefine
 /** Public URL of an image of the bucket, or null when there is none. */
 export function shopMediaUrl(
   path: string | null | undefined,
-  baseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL,
+  baseUrl: string | undefined = supabaseUrl(),
 ): string | null {
   if (!path || !baseUrl) return null;
   const encoded = path.split("/").map(encodeURIComponent).join("/");

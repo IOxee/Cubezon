@@ -1,3 +1,5 @@
+import { supabaseUrl } from "@/lib/supabase/url";
+
 /** URL of the original game icon for a material id. Configurable with NEXT_PUBLIC_ITEM_ICON_URL ({id} placeholder). */
 const ICON_URL = process.env.NEXT_PUBLIC_ITEM_ICON_URL ?? "https://mc.nerothe.com/img/1.21.11/minecraft_{id}.png";
 
@@ -11,7 +13,7 @@ export function itemIconUrl(material: string): string {
 /** Public URL of an icon of the item-icons bucket, or null when there is none. */
 export function customIconUrl(
   path: string | null | undefined,
-  baseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL,
+  baseUrl: string | undefined = supabaseUrl(),
 ): string | null {
   if (!path || !baseUrl) return null;
   const encoded = path.split("/").map(encodeURIComponent).join("/");
@@ -24,7 +26,7 @@ export function customIconUrl(
  */
 export function itemIconSrc(
   item: { material: string; customIconPath?: string | null },
-  baseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL,
+  baseUrl: string | undefined = supabaseUrl(),
 ): string {
   return customIconUrl(item.customIconPath, baseUrl) ?? itemIconUrl(item.material);
 }

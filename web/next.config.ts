@@ -47,6 +47,8 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  // Self-contained server (.next/standalone/server.js) for the release zip; hosts like Vercel ignore it.
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   async headers() {
