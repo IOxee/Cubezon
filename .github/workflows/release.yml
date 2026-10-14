@@ -102,6 +102,7 @@ jobs:
           cp -r web/.next/static "$out/.next/"
           if [ -d web/public ]; then cp -r web/public "$out/"; fi
           cp web/scripts/release-readme.md "$out/README.md"
+          cp LICENSE "$out/LICENSE"
           find "$out" -name '.env*' -print -delete
 
       - name: Check that nothing of the build environment leaked
