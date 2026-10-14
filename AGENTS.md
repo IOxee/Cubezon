@@ -64,6 +64,7 @@
 - Shop slots: the limit is enforced by the database (trigger `check_shop_slots` on shops, error `SHOP_SLOTS_EXCEEDED`). REJECTED shops do not count. The quota is `players.shop_slots` or, if null, `plugin_settings.default_shop_slots` (which the plugin publishes from `shops.default-slots`). `shop_slots_of(uuid)` returns the quota, used and free slots. Do not duplicate the check in code.
 - Another session is working on the web and its migrations. Before creating a migration, list `supabase/migrations` and use a timestamp later than the latest one **and not already taken**: if two files share a version, `db push` applies the wrong one and fails.
 - Do not use Amazon's brand, logo or name. In-game money only (Mojang EULA).
+- License: CC BY-NC-SA 4.0 (SPDX `CC-BY-NC-SA-4.0`), text in the root `LICENSE`. Keep it consistent in `plugin/src/main/resources/plugin.yml` (`license`, informative only), `web/package.json`, the README badge and section, and the jar (`shadowJar` copies `LICENSE` to `META-INF/LICENSE-CUBEZON`).
 
 ## Way of working
 - Texts: if you change a text that already exists in `lang/en.yml` or `lang/es.yml`, bump `lang-version` (same value in both files). The plugin will replace the server's file and keep a copy (`.bak-vN`). If you only add new texts, it is not needed.

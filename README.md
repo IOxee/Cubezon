@@ -5,7 +5,7 @@
 ![Paper 1.21](https://img.shields.io/badge/Paper-1.21.11-1F2421)
 ![Next.js 16](https://img.shields.io/badge/Next.js-16-1F2421)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-1F2421)
-[![License: MIT](https://img.shields.io/badge/License-MIT-D9A21B)](LICENSE)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-D9A21B)](LICENSE)
 
 **English** · [Español](docs/i18n/README.es.md)
 
@@ -176,4 +176,4 @@ Found something? Please open a private [security advisory](https://github.com/IO
 
 ## License
 
-[MIT](LICENSE)
+[CC-BY-NC-SA-4.0](LICENSE)

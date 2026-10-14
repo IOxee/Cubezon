@@ -55,6 +55,11 @@ tasks {
         val base = "es.fractalgamestudios.cubezon.libs"
         relocate("com.zaxxer.hikari", "$base.hikari")
         relocate("org.postgresql", "$base.postgresql")
+
+        from(rootDir.resolve("../LICENSE")) {
+            into("META-INF")
+            rename { "LICENSE-CUBEZON" }
+        }
     }
 
     build {
