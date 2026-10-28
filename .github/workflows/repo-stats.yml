@@ -5,7 +5,7 @@ name: Repo stats
 
 on:
   schedule:
-    - cron: "0 23 * * *"
+    - cron: "0 23 * * 0"
   workflow_dispatch:
 
 permissions:
